@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -11,6 +12,28 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   bool _isTyping = false;
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImageFromCamera() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+    Navigator.pop(context);
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+    Navigator.pop(context);
+  }
 
   void _showAttachmentMenu(BuildContext context) {
     showModalBottomSheet(
@@ -24,14 +47,14 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.camera_alt, color: Colors.blueAccent),
+              leading: Icon(Icons.camera_alt, color: Colors.teal),
               title: Text("Chụp hình"),
-              onTap: () => Navigator.pop(context),
+              onTap: _pickImageFromCamera,
             ),
             ListTile(
-              leading: Icon(Icons.upload_file, color: Colors.greenAccent),
+              leading: Icon(Icons.upload_file, color: Colors.teal),
               title: Text("Đăng tải ảnh từ thư viện"),
-              onTap: () => Navigator.pop(context),
+              onTap: _pickImageFromGallery,
             ),
           ],
         ),
@@ -45,10 +68,17 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         backgroundColor: Colors.teal,
         elevation: 4,
+        title: Text("Trò chuyện AI"),
       ),
       body: Column(
         children: [
-          Expanded(child: Center(child: Text("Chưa có tin nhắn"))),
+          Expanded(
+            child: Center(
+              child: _selectedImage != null
+                  ? Image.file(_selectedImage!)
+                  : Text("Chưa có tin nhắn"),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: Container(
@@ -68,29 +98,25 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Column(
                 children: [
                   TextField(
-                          controller: _controller,
-                          onChanged: (text) => setState(() => _isTyping = text.isNotEmpty),
-                          decoration: InputDecoration(
-                            hintText: "Nhập mô tả triệu chứng bệnh của bạn VD: Da có mẩn đỏ ngứa ngáy",
-                            hintStyle: TextStyle(color: Colors.black45),
-                            border: InputBorder.none,
-                          ),
-                        ),
+                    controller: _controller,
+                    onChanged: (text) => setState(() => _isTyping = text.isNotEmpty),
+                    decoration: InputDecoration(
+                      hintText: "Nhập mô tả triệu chứng bệnh của bạn VD: Da có mẩn đỏ ngứa ngáy",
+                      hintStyle: TextStyle(color: Colors.black45),
+                      border: InputBorder.none,
+                    ),
+                  ),
                   SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                        IconButton(
-                        icon: Icon(Icons.add_circle, size: 30, color: Colors.black54),
-                        onPressed: () => _showAttachmentMenu(context),
-                      ),
-                      Icon(
-                        Icons.mic,
-                        color: Colors.black54,
-                      ),
+                          IconButton(
+                            icon: Icon(Icons.add_circle, size: 30, color: Colors.black54),
+                            onPressed: () => _showAttachmentMenu(context),
+                          ),
+                          Icon(Icons.mic, color: Colors.black54),
                         ],
                       ),
                       AnimatedSwitcher(
