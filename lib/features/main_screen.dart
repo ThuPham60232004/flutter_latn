@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_latn/features/home/presentation/screens/home_screen.dart';
-import 'package:flutter_application_latn/features/chat/presentation/screens/chat_screen.dart';
-
+import 'package:flutter_application_latn/features/pineline_main/presentation/screens/choose_image_screen.dart';
+import 'package:flutter_application_latn/features/pineline_main/presentation/screens/pineline-1.dart';
+import 'package:flutter_application_latn/features/pineline_main/presentation/screens/result_screen.dart';
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -14,9 +15,9 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),  
-    const Center(child: Text("Lịch hẹn")),  
-    const ChatScreen(),  
-    const Center(child: Text("Hồ sơ")), 
+    Pineline_1_Screen(),  
+    const ChooseImageScreen(),  
+    ResultScreen(), 
   ];
 
   void _onItemTapped(int index) {
@@ -48,22 +49,22 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'Trang chủ',
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
-            label: 'Lịch hẹn',
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             activeIcon: Icon(Icons.chat),
-            label: 'Tin nhắn',
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
-            label: 'Hồ sơ',
+            label: '',
           ),
         ],
       ),
