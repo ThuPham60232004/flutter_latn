@@ -13,7 +13,7 @@ class HomeSearch extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: const TextField(
         decoration: InputDecoration(
-          hintText: 'Search Doctor...',
+          hintText: 'Tìm kiếm bác sĩ...',
           hintStyle: TextStyle(color: Colors.white70),
           border: InputBorder.none,
           icon: Icon(Icons.search, color: Colors.white),

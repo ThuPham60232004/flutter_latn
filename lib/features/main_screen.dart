@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_latn/features/home/presentation/screens/home_screen.dart';
-import 'package:flutter_application_latn/features/pineline_main/presentation/screens/choose_image_screen.dart';
-import 'package:flutter_application_latn/features/pineline_main/presentation/screens/pineline-1.dart';
-import 'package:flutter_application_latn/features/pineline_main/presentation/screens/result_screen.dart';
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -14,10 +11,10 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const HomeScreen(),  
-    Pineline_1_Screen(),  
-    const ChooseImageScreen(),  
-    ResultScreen(), 
+    HomeScreen(),  
+    const Text ('haha1'),
+    const Text ('haha2'),
+    const Text ('haha3'),
   ];
 
   void _onItemTapped(int index) {
