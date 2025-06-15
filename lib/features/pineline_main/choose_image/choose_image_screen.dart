@@ -30,7 +30,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen> {
       sourcePath: pickedFile.path,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 85,
+      compressQuality: 90,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Chỉnh sửa ảnh',
@@ -266,16 +266,23 @@ Future<void> _uploadImage() async {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () => _pickImage(ImageSource.gallery),
-                        icon: const Icon(Icons.edit),
-                        label: const Text("Chỉnh sửa ảnh"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _pickImage(ImageSource.gallery),
+                          icon: const Icon(Icons.edit),
+                          label: const Text("Chỉnh sửa ảnh"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
                         ),
                       ),
+
                     ],
                   ),
             const Spacer(),

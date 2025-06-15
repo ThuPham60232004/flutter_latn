@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_application_latn/features/home/presentation/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_latn/features/auth/presentation/widgets/login_widget.dart';
 

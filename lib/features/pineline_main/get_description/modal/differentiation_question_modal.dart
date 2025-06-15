@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_application_latn/features/pineline_main/result/get_result.dart';
+import 'package:flutter_application_latn/features/pineline_main/result/result.dart';
 class Differentiation_Question_Modal extends StatefulWidget {
   final ScrollController scrollController;
 
@@ -89,7 +89,7 @@ class _Differentiation_Question_ModalState extends State<Differentiation_Questio
       if (response.statusCode == 200) {
         print("Gửi thành công!");
         Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => GetResult()),
+        MaterialPageRoute(builder: (context) => Result()),
       );
       } else {
         print("Lỗi khi gửi dữ liệu: ${response.body}");

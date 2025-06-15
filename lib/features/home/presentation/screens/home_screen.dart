@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/home_header.dart';
 import 'package:flutter_application_latn/features/pineline_main/choose_image/choose_image_screen.dart';
 import 'package:flutter_application_latn/features/pineline_main/get_description/screen/user_description.dart';
-import 'package:flutter_application_latn/features/pineline_main/result/result_screen.dart';
+import 'package:flutter_application_latn/features/pineline_main/result/result.dart';
 import 'package:flutter_application_latn/features/auth/presentation/screens/login_screen.dart';
 import 'package:flutter_application_latn/features/auth/presentation/screens/register_screen.dart';
 
@@ -111,12 +111,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _logout(BuildContext context) {
-    // TODO: Thực hiện xoá token / trạng thái đăng nhập tại đây
-    // Ví dụ:
-    // SharedPreferences prefs = await SharedPreferences.getInstance();
-    // await prefs.remove('token');
-
-    // Quay về LoginScreen và xoá các màn hình trước
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => LoginScreen()),
