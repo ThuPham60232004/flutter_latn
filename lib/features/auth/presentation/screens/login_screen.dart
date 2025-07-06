@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('_id', data['_id']);
       await prefs.setString('name', data['name']);
-
+      await prefs.setString('email', data['email']);
       showDialog(
         context: context,
         barrierDismissible: false,

@@ -23,7 +23,8 @@ class _ResultState extends State<Result> {
 
     if (userId == null) return [];
 
-    final url = 'https://fastapi-service-748034725478.europe-west4.run.app/api/final-diagnose?key=$userId';
+    final url =
+        'https://fastapi-service-748034725478.europe-west4.run.app/api/final-diagnose?key=$userId';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -54,7 +55,8 @@ class _ResultState extends State<Result> {
   }
 
   Future<String> fetchDiseaseDescription(String diseaseName) async {
-    final url = 'https://fastapi-service-748034725478.europe-west4.run.app/api/knowledge?disease_name=$diseaseName';
+    final url =
+        'https://fastapi-service-748034725478.europe-west4.run.app/api/knowledge?disease_name=$diseaseName';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -75,8 +77,8 @@ Phòng bệnh: ${info['Phòng bệnh'] ?? 'Không tìm thấy'}
 
 Thuốc điều trị:
 ${(info['Các loại thuốc'] as List).map((thuoc) {
-  return "- ${thuoc['Tên thuốc'] ?? 'Không rõ'}: ${thuoc['Liều lượng'] ?? 'Không rõ'}, thời gian: ${thuoc['Thời gian sử dụng'] ?? 'Không rõ'}";
-}).join('\n')}
+          return "- ${thuoc['Tên thuốc'] ?? 'Không rõ'}: ${thuoc['Liều lượng'] ?? 'Không rõ'}, thời gian: ${thuoc['Thời gian sử dụng'] ?? 'Không rõ'}";
+        }).join('\n')}
 ''';
 
         return description;
@@ -108,14 +110,17 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
       padding: EdgeInsets.all(16),
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Color(0xFFB2DFDB).withOpacity(0.3),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            blurRadius: 8,
-            color: Colors.black12,
-            offset: Offset(0, 4),
+            blurRadius: 16,
+            color: Color(0xFF199A8E).withOpacity(0.08),
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -124,7 +129,11 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
         children: [
           Text(
             ketqua.toUpperCase(),
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF222B45),
+            ),
           ),
           SizedBox(height: 12),
           Row(
@@ -134,7 +143,7 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color(0xFF6B7280),
                 ),
               ),
               Container(
@@ -163,16 +172,23 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: Colors.red, size: 15),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.red,
+                        size: 15,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Cảnh báo',
-                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ]
+              ],
             ],
           ),
           SizedBox(height: 20),
@@ -203,20 +219,27 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
                       barrierDismissible: false,
                       builder: (context) {
                         return Dialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           child: FutureBuilder<String>(
                             future: fetchDiseaseDescription(ketqua),
                             builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
                                 return Padding(
                                   padding: const EdgeInsets.all(20),
                                   child: SizedBox(
                                     height: 100,
-                                    child: Center(child: CircularProgressIndicator()),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
                                   ),
                                 );
                               } else {
-                                final textLines = snapshot.data?.split('\n') ?? ['Không có dữ liệu'];
+                                final textLines =
+                                    snapshot.data?.split('\n') ??
+                                    ['Không có dữ liệu'];
 
                                 return Container(
                                   padding: EdgeInsets.all(20),
@@ -226,11 +249,19 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
                                     children: [
                                       Row(
                                         children: [
-                                          Icon(Icons.medical_information_rounded, color: Colors.teal, size: 24),
+                                          Icon(
+                                            Icons.medical_information_rounded,
+                                            color: Color(0xFF199A8E),
+                                            size: 24,
+                                          ),
                                           SizedBox(width: 8),
                                           Text(
                                             'Thông tin bệnh học',
-                                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF222B45),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -238,71 +269,139 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
                                       Expanded(
                                         child: SingleChildScrollView(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: textLines.map((line) {
-                                              if (line.trim().isEmpty) return SizedBox.shrink();
-                                              if (line.startsWith("Thuốc điều trị:")) {
-                                                return Padding(
-                                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                                  child: Text(
-                                                    "💊 ${line.trim()}",
-                                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                                  ),
-                                                );
-                                              }
-                                              if (line.startsWith("-")) {
-                                                return Padding(
-                                                  padding: const EdgeInsets.only(left: 12.0, bottom: 4),
-                                                  child: Text(line, style: TextStyle(fontSize: 14)),
-                                                );
-                                              }
-                                              if (line.contains(':')) {
-                                                final parts = line.split(':');
-                                                return Padding(
-                                                  padding: const EdgeInsets.symmetric(vertical: 6.0),
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      RichText(
-                                                        text: TextSpan(
-                                                          text: "${parts[0]}: ",
-                                                          style: TextStyle(
-                                                              fontWeight: FontWeight.bold,
-                                                              fontSize: 15,
-                                                              color: Colors.black),
-                                                          children: [
-                                                            TextSpan(
-                                                              text: parts.sublist(1).join(':').trim(),
-                                                              style: TextStyle(
-                                                                  fontWeight: FontWeight.normal,
-                                                                  fontSize: 14,
-                                                                  color: Colors.black87),
-                                                            )
-                                                          ],
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children:
+                                                textLines.map((line) {
+                                                  if (line.trim().isEmpty)
+                                                    return SizedBox.shrink();
+                                                  if (line.startsWith(
+                                                    "Thuốc điều trị:",
+                                                  )) {
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            vertical: 8.0,
+                                                          ),
+                                                      child: Text(
+                                                        "💊 ${line.trim()}",
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 15,
+                                                          color: Color(
+                                                            0xFF222B45,
+                                                          ),
                                                         ),
                                                       ),
-                                                      Divider(height: 16, color: Colors.grey.shade300),
-                                                    ],
-                                                  ),
-                                                );
-                                              }
-                                              return Text(line);
-                                            }).toList(),
+                                                    );
+                                                  }
+                                                  if (line.startsWith("-")) {
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            left: 12.0,
+                                                            bottom: 4,
+                                                          ),
+                                                      child: Text(
+                                                        line,
+                                                        style: TextStyle(
+                                                          fontSize: 14,
+                                                          color: Color(
+                                                            0xFF6B7280,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                  if (line.contains(':')) {
+                                                    final parts = line.split(
+                                                      ':',
+                                                    );
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            vertical: 6.0,
+                                                          ),
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          RichText(
+                                                            text: TextSpan(
+                                                              text:
+                                                                  "${parts[0]}: ",
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 15,
+                                                                color: Color(
+                                                                  0xFF222B45,
+                                                                ),
+                                                              ),
+                                                              children: [
+                                                                TextSpan(
+                                                                  text:
+                                                                      parts
+                                                                          .sublist(
+                                                                            1,
+                                                                          )
+                                                                          .join(
+                                                                            ':',
+                                                                          )
+                                                                          .trim(),
+                                                                  style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .normal,
+                                                                    fontSize:
+                                                                        14,
+                                                                    color: Color(
+                                                                      0xFF6B7280,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          Divider(
+                                                            height: 16,
+                                                            color: Color(
+                                                              0xFFB2DFDB,
+                                                            ).withOpacity(0.3),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  }
+                                                  return Text(line);
+                                                }).toList(),
                                           ),
                                         ),
                                       ),
                                       SizedBox(height: 20),
                                       ElevatedButton.icon(
-                                        onPressed: () => Navigator.of(context).pop(),
-                                        icon: Icon(Icons.close,color: Colors.white,),
-                                        label: Text('Đóng',style: TextStyle(color: Colors.white),),
+                                        onPressed:
+                                            () => Navigator.of(context).pop(),
+                                        icon: Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                        ),
+                                        label: Text(
+                                          'Đóng',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.teal,
+                                          backgroundColor: Color(0xFF199A8E),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                         ),
-                                      )
+                                      ),
                                     ],
                                   ),
                                 );
@@ -319,7 +418,8 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text('Xem thông tin',
+                  child: Text(
+                    'Xem thông tin',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
@@ -334,7 +434,7 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF8F9FA),
+      backgroundColor: Color(0xFFE0F7FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
