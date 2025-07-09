@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_latn/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter_application_latn/features/compare/compare_screen.dart';
 import 'package:flutter_application_latn/features/uv/uv_screen.dart';
+import 'package:flutter_application_latn/features/profile/profile.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,7 +18,7 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     const CompareScreen(),
     const UVScreen(),
-    const Text('Màn hình Hồ sơ'),
+    const ProfilePage(),
   ];
 
   void _onItemTapped(int index) {

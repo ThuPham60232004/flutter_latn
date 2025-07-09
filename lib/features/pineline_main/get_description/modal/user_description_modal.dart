@@ -26,7 +26,6 @@ class _User_Description_ModalState extends State<User_Description_Modal>
   late Animation<double> _scaleButton;
   bool _isLoading = false;
 
-  // For staggered animation
   final int _fieldCount = 5;
   late List<bool> _fieldVisible;
 
@@ -60,17 +59,27 @@ class _User_Description_ModalState extends State<User_Description_Modal>
     _controller.dispose();
     super.dispose();
   }
+Future<void> submitDescription() async {
+  if (_isLoading) return;
 
-  Future<void> submitDescription() async {
-    if (_isLoading) return;
-    setState(() {
-      _isLoading = true;
-    });
+  setState(() {
+    _isLoading = true;
+  });
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('_id') ?? '';
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getString('userId') ?? '';
 
-    final userDescription = '''
+  // Check userId trước khi gửi
+  if (userId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("⚠️ Không tìm thấy userId! Hãy đăng nhập lại.")),
+    );
+    setState(() => _isLoading = false);
+    return;
+  }
+
+  // Tạo nội dung mô tả
+  final userDescription = '''
 Vị trí tổn thương: ${positionController.text.trim()}
 Thời gian xuất hiện: ${durationController.text.trim()}
 Đặc điểm tổn thương: ${appearanceController.text.trim()}
@@ -78,38 +87,57 @@ Cảm giác tại vùng tổn thương: ${sensationController.text.trim()}
 Mức độ lan rộng: ${spreadController.text.trim()}
 ''';
 
-    final url = Uri.parse(
-      'https://fastapi-service-748034725478.europe-west4.run.app/api/submit-user-description?key=$userId',
+  final url = Uri.parse(
+    'https://fastapi-service-748034725478.europe-west4.run.app/api/submit-user-description?key=$userId',
+  );
+
+  try {
+    print("📤 URL gửi: $url");
+    print("📦 Body: ${jsonEncode({'user_description': userDescription})}");
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(userDescription),
     );
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'user_description': userDescription}),
-      );
+    print("📥 Status: ${response.statusCode}");
+    print("📥 Response body: ${response.body}");
 
-      if (response.statusCode == 200) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => Differentiation_Question()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gửi thất bại: ${response.statusCode}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('⚠️ Lỗi khi gửi: $e')));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    if (!mounted) return;
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Gửi thành công!")),
+      );
+      await Future.delayed(const Duration(milliseconds: 400)); // Cho SnackBar hiện
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => Differentiation_Question()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '❌ Gửi thất bại\nMã lỗi: ${response.statusCode}\nChi tiết: ${response.body}',
+          ),
+        ),
+      );
+    }
+  } catch (e, st) {
+    print("❗ Gặp lỗi khi gửi: $e");
+    print("📍 StackTrace: $st");
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('⚠️ Gặp lỗi khi gửi dữ liệu: $e')),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -231,14 +259,10 @@ Mức độ lan rộng: ${spreadController.text.trim()}
                         backgroundColor: WidgetStateProperty.resolveWith<Color>(
                           (states) {
                             if (states.contains(WidgetState.pressed)) {
-                              return const Color(
-                                0xFF2E7D32,
-                              ); 
+                              return const Color(0xFF2E7D32);
                             }
                             if (states.contains(WidgetState.hovered)) {
-                              return const Color(
-                                0xFF1DAA9D,
-                              );
+                              return const Color(0xFF1DAA9D);
                             }
                             return const Color(0xFF199A8E);
                           },

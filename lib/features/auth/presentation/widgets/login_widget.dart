@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_latn/features/home/presentation/screens/home_screen.dart';
+import 'package:flutter_application_latn/features/main_screen.dart';
+import 'package:flutter_application_latn/features/auth/presentation/screens/forgot_screen.dart';
 
 class SuccessDialog extends StatelessWidget {
   const SuccessDialog({super.key});
@@ -34,10 +35,10 @@ class SuccessDialog extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context); 
+                  Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) =>  HomeScreen()),
+                    MaterialPageRoute(builder: (_) => const MainScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -47,7 +48,10 @@ class SuccessDialog extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Về trang chủ', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Về trang chủ',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ],

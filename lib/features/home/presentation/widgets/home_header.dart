@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:video_player/video_player.dart';
-import '../widgets/home_search.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeHeader extends StatefulWidget {
@@ -14,19 +12,15 @@ class HomeHeader extends StatefulWidget {
 }
 
 class _HomeHeaderState extends State<HomeHeader> {
-  late VideoPlayerController _controller;
   String userName = '';
+  String avatarUrl =
+      'https://randomuser.me/api/portraits/men/32.jpg'; // fallback avatar
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset('assets/images/background.mp4')
-      ..initialize().then((_) {
-        _controller.setLooping(true);
-        _controller.play();
-        setState(() {});
-      });
     _loadUserName();
+    _loadAvatar();
   }
 
   Future<void> _loadUserName() async {
@@ -37,10 +31,14 @@ class _HomeHeaderState extends State<HomeHeader> {
     });
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Future<void> _loadAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedAvatar = prefs.getString('avatar');
+    if (storedAvatar != null && storedAvatar.isNotEmpty) {
+      setState(() {
+        avatarUrl = storedAvatar;
+      });
+    }
   }
 
   @override
@@ -48,101 +46,117 @@ class _HomeHeaderState extends State<HomeHeader> {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Calculate responsive height based on screen size
-    final headerHeight = screenHeight * 0.35; // 35% of screen height
-    final minHeight = 250.0;
-    final maxHeight = 350.0;
+    final headerHeight = screenHeight * 0.28;
+    final minHeight = 180.0;
+    final maxHeight = 260.0;
     final finalHeight = headerHeight.clamp(minHeight, maxHeight);
 
-    // Calculate responsive padding
-    final horizontalPadding = screenWidth * 0.05; // 5% of screen width
-    final topPadding = screenHeight * 0.05; // 5% of screen height
+    final horizontalPadding = screenWidth * 0.06;
+    final topPadding = screenHeight * 0.03;
 
     return Container(
       height: finalHeight,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(
-                  screenWidth * 0.2,
-                ), // Responsive radius
-                bottomRight: Radius.zero,
-              ),
-              child:
-                  _controller.value.isInitialized
-                      ? AspectRatio(
-                        aspectRatio: _controller.value.aspectRatio,
-                        child: VideoPlayer(_controller),
-                      )
-                      : Container(color: Colors.teal),
-            ),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.teal.withOpacity(0.7),
-                    Colors.teal.shade300.withOpacity(0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(
-                    screenWidth * 0.2,
-                  ), // Responsive radius
-                  bottomRight: Radius.zero,
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: topPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.menu, color: Colors.white),
-                        onPressed: () {
-                          widget.scaffoldKey.currentState?.openEndDrawer();
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Xin chào 🎉',
-                    style: GoogleFonts.lato(
-                      fontSize: screenWidth * 0.045, 
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    userName,
-                    style: GoogleFonts.lato(
-                      fontSize: screenWidth * 0.06,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF19C3AE), Color.fromARGB(255, 14, 124, 111)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(screenWidth * 0.18),
+          bottomRight: Radius.circular(screenWidth * 0.04),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF19C3AE).withOpacity(0.12),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: topPadding,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () {
+                      widget.scaffoldKey.currentState?.openEndDrawer();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: screenWidth * 0.07,
+                    backgroundColor: Colors.white,
+                    child: CircleAvatar(
+                      radius: screenWidth * 0.065,
+                      backgroundImage: NetworkImage(avatarUrl),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Xin chào',
+                              style: GoogleFonts.lato(
+                                fontSize: screenWidth * 0.038,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '👋',
+                              style: TextStyle(fontSize: screenWidth * 0.038),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          userName,
+                          style: GoogleFonts.lato(
+                            fontSize: screenWidth * 0.052,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Chúc bạn một ngày tuyệt vời và nhiều sức khỏe!',
+                          style: GoogleFonts.lato(
+                            color: Colors.white.withOpacity(0.92),
+                            fontSize: screenWidth * 0.032,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+            ],
+          ),
+        ),
       ),
     );
   }

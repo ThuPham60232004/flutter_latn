@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'models/article_model.dart';
 import 'services/article_service.dart';
 import '../../core/config/responsive_text.dart';
+import '../../core/utils/text_utils.dart';
+import 'arcticles_list.dart';
 
 class ArticleDetailScreen extends StatefulWidget {
   final Map<String, dynamic> article;
@@ -102,100 +104,121 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          // Custom App Bar with Hero Image
-          SliverAppBar(
-            expandedHeight: 300,
-            floating: false,
-            pinned: true,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.black,
-                  size: 20,
-                ),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(12),
+          SliverToBoxAdapter(
+            child: Stack(
+              children: [
+                // Hero image with rounded bottom corners
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
                   ),
-                  child: Icon(
-                    isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    color: isBookmarked ? Colors.teal : Colors.black,
-                    size: 20,
+                  child: Image.network(
+                    widget.article['image'] ?? '',
+                    width: double.infinity,
+                    height: 320,
+                    fit: BoxFit.cover,
+                    errorBuilder:
+                        (context, error, stackTrace) => Container(
+                          width: double.infinity,
+                          height: 320,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.broken_image,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
+                        ),
                   ),
                 ),
-                onPressed: () {
-                  setState(() {
-                    isBookmarked = !isBookmarked;
-                  });
-                },
-              ),
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(12),
+                // Overlayed app bar buttons
+                Positioned(
+                  top: statusBarHeight + 16,
+                  left: 16,
+                  child: _FrostedCircleButton(
+                    icon: Icons.arrow_back_ios_new,
+                    onTap: () => Navigator.pop(context),
                   ),
-                  child: const Icon(Icons.share, color: Colors.black, size: 20),
                 ),
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  setState(() {
-                    shareCount++;
-                  });
-                },
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Hero(
-                tag: 'article_${widget.article['id']}',
-                child: Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(widget.article['image'] ?? ''),
-                      fit: BoxFit.cover,
-                      onError: (exception, stackTrace) {
-                        // Handle image loading error
-                      },
-                    ),
+                Positioned(
+                  top: statusBarHeight + 16,
+                  right: 72,
+                  child: _FrostedCircleButton(
+                    icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                    iconColor: isBookmarked ? Colors.teal : Colors.black,
+                    onTap: () {
+                      setState(() {
+                        isBookmarked = !isBookmarked;
+                      });
+                    },
                   ),
+                ),
+                Positioned(
+                  top: statusBarHeight + 16,
+                  right: 16,
+                  child: _FrostedCircleButton(
+                    icon: Icons.share,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() {
+                        shareCount++;
+                      });
+                    },
+                  ),
+                ),
+                // Title overlay at bottom of image
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
                   child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 24,
+                    ),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
+                      color: Colors.black.withOpacity(0.45),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
                       ),
                     ),
+                    child: Text(
+                      widget.article['title'] ?? '',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 28,
+                        color: Colors.white,
+                        height: 1.2,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
-
-          // Article Content
+          // Author & meta row just below the image
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: _buildArticleMeta(),
+            ),
+          ),
+          // Main content
           SliverToBoxAdapter(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -206,29 +229,15 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Article Title
-                      Text(
-                        widget.article['title'] ?? '',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: ResponsiveText.h1,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: false,
-                      ),
+                      // Removed title here (now on image)
                       const SizedBox(height: 16),
-                      _buildArticleMeta(),
-                      const SizedBox(height: 24),
                       _buildArticleContent(),
                       const SizedBox(height: 32),
                       _buildAuthorSection(),
                       const SizedBox(height: 32),
                       _buildRelatedArticles(),
+                      const SizedBox(height: 16),
                       const SizedBox(height: 32),
-                      _buildCommentsSection(),
-                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -237,103 +246,81 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
           ),
         ],
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.teal.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          backgroundColor: Colors.teal,
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            setState(() {
-              isLiked = !isLiked;
-              likeCount += isLiked ? 1 : -1;
-            });
-          },
-          child: Icon(
-            isLiked ? Icons.favorite : Icons.favorite_border,
-            color: Colors.white,
-            size: 24,
-          ),
-        ),
-      ),
     );
   }
 
   Widget _buildArticleMeta() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundImage: NetworkImage(
-            widget.article['author_avatar'] ??
-                'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        // Larger avatar with border/shadow
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(color: Colors.white, width: 2),
           ),
-          onBackgroundImageError: (exception, stackTrace) {},
+          child: CircleAvatar(
+            radius: 24,
+            backgroundImage: NetworkImage(
+              widget.article['author_avatar'] ??
+                  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+            ),
+            onBackgroundImageError: (exception, stackTrace) {},
+          ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Author name
               Text(
-                widget.article['author'] ?? 'Tác giả',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                TextUtils.formatAuthorName(
+                  widget.article['author'] ?? 'Tác giả',
                 ),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                maxLines: 1,
               ),
               const SizedBox(height: 2),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.article['date'] ?? 'Hôm nay',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${widget.article['read_time'] ?? '5'} phút đọc',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
+              Text(
+                widget.article['date'] ?? 'Hôm nay',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
-
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          margin: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: Colors.teal.withOpacity(0.1),
+            color: Colors.teal.withOpacity(0.12),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            widget.article['category'] ?? 'Sức khỏe',
+            _truncateTag(
+              TextUtils.formatCategoryTag(
+                widget.article['category'] ?? 'Sức khỏe',
+              ),
+            ),
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Colors.teal,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -431,7 +418,9 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.article['author'] ?? 'Tác giả',
+                      TextUtils.formatAuthorName(
+                        widget.article['author'] ?? 'Tác giả',
+                      ),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -464,16 +453,45 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
   }
 
   Widget _buildRelatedArticles() {
+    final showSeeAll = relatedArticles.length > 4;
+    final displayedArticles = relatedArticles.take(4).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Bài viết liên quan',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Bài viết liên quan',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            if (showSeeAll)
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => ArticlesListPage(
+                            articles: relatedArticles,
+                            title: 'Tất cả bài viết liên quan',
+                          ),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Xem tất cả',
+                  style: TextStyle(
+                    color: Colors.teal,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 16),
         if (isLoadingRelatedArticles)
@@ -511,10 +529,10 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
             height: 220,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: relatedArticles.length,
+              itemCount: displayedArticles.length,
               separatorBuilder: (context, index) => const SizedBox(width: 16),
               itemBuilder: (context, index) {
-                final article = relatedArticles[index];
+                final article = displayedArticles[index];
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -582,9 +600,11 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    article.tags.isNotEmpty
-                                        ? article.tags.first
-                                        : 'Nghiên cứu y khoa',
+                                    TextUtils.formatCategoryTag(
+                                      article.tags.isNotEmpty
+                                          ? article.tags.first
+                                          : 'Nghiên cứu y khoa',
+                                    ),
                                     style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
@@ -616,103 +636,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
               },
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildCommentsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text(
-              'Bình luận',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '$commentCount',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundImage: NetworkImage(
-                  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-                ),
-                onBackgroundImageError: (exception, stackTrace) {},
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Viết bình luận...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.send, color: Colors.teal),
-                onPressed: () {},
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        _buildCommentItem(
-          'Nguyễn Thị B',
-          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-          'Bài viết rất hữu ích! Tôi đã áp dụng và thấy kết quả tốt.',
-          '2 giờ trước',
-          12,
-        ),
-        const SizedBox(height: 12),
-        _buildCommentItem(
-          'Trần Văn C',
-          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-          'Cảm ơn tác giả đã chia sẻ những thông tin quý báu này.',
-          '5 giờ trước',
-          8,
-        ),
       ],
     );
   }
@@ -804,4 +727,43 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
       ),
     );
   }
+}
+
+// Frosted glass circle button widget
+class _FrostedCircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color iconColor;
+  const _FrostedCircleButton({
+    Key? key,
+    required this.icon,
+    required this.onTap,
+    this.iconColor = Colors.black,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: Material(
+        color: Colors.white.withOpacity(0.4),
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Helper function for tag truncation
+String _truncateTag(String tag) {
+  // Show at most 9 characters, add ellipsis if longer
+  return tag.runes.length > 9
+      ? String.fromCharCodes(tag.runes.take(9)) + '…'
+      : tag;
 }

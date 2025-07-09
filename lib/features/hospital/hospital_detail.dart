@@ -251,7 +251,6 @@ class _HospitalScreenState extends State<HospitalScreen>
                   ),
                   const SizedBox(height: 28),
 
-                  // Hospital Information Card
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -422,56 +421,12 @@ class _HospitalScreenState extends State<HospitalScreen>
                         ),
                         _SpecialtyIcon(icon: Icons.favorite, label: 'Tim mạch'),
                         const SizedBox.shrink(),
+                        const SizedBox(height: 22),
                       ],
                     ),
+                    const SizedBox(height: 22),
+                  ],               
                   ],
-
-                  const SizedBox(height: 28),
-                  const Text(
-                    'Bác sĩ giỏi nhất tại bệnh viện',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    height: 140,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: 4,
-                      separatorBuilder:
-                          (context, index) => const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final doctors = [
-                          {
-                            'name': 'TS.BS. Nguyễn Văn An',
-                            'image':
-                                'https://cdn.medinet.gov.vn/Media/1_News/Images/2021/11/bs-nguyen-van-an.jpg',
-                          },
-                          {
-                            'name': 'TS.BS. Trần Thị Mai',
-                            'image':
-                                'https://cdn.medinet.gov.vn/Media/1_News/Images/2021/11/bs-tran-thi-mai.jpg',
-                          },
-                          {
-                            'name': 'TS.BS. Lê Quang Huy',
-                            'image':
-                                'https://cdn.medinet.gov.vn/Media/1_News/Images/2021/11/bs-le-quang-huy.jpg',
-                          },
-                          {
-                            'name': 'TS.BS. Phạm Thị Hạnh',
-                            'image':
-                                'https://cdn.medinet.gov.vn/Media/1_News/Images/2021/11/bs-pham-thi-hanh.jpg',
-                          },
-                        ];
-                        return _DoctorAvatar(
-                          name: doctors[index]['name']!,
-                          imageUrl: doctors[index]['image']!,
-                          isLast: index == doctors.length - 1,
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
               ),
             ),
           ),

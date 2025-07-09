@@ -3,6 +3,7 @@ import 'package:flutter_application_latn/features/hospital/hospital_detail.dart'
 import 'package:flutter_application_latn/features/hospital/models/hospital_model.dart';
 import 'package:flutter_application_latn/features/hospital/services/hospital_service.dart';
 import 'package:flutter_application_latn/core/config/responsive_text.dart';
+import 'package:flutter_application_latn/core/utils/text_utils.dart';
 
 class ListHospitalPage extends StatefulWidget {
   const ListHospitalPage({Key? key}) : super(key: key);

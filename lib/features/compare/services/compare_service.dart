@@ -36,8 +36,6 @@ class CompareService {
     }
   }
 
-  /// Upload comparison image and get both images
-  /// Returns: CompareResult object
   static Future<CompareResult> compareImages({
     required String userId,
     required String processId,
@@ -51,10 +49,8 @@ class CompareService {
         ),
       );
 
-      // Add user_id field
       request.fields['user_id'] = userId;
 
-      // Add image file
       request.files.add(
         await http.MultipartFile.fromPath('image', imageFile.path),
       );

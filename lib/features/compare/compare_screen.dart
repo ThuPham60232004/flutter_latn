@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/compare_service.dart';
 import 'models/compare_model.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 class CompareScreen extends StatefulWidget {
   const CompareScreen({super.key});
@@ -15,7 +16,6 @@ class CompareScreen extends StatefulWidget {
 class _CompareScreenState extends State<CompareScreen> {
   final ImagePicker _picker = ImagePicker();
 
-  // State variables
   String? _processId;
   String? _uploadedImageUrl;
   String? _firstImageUrl;
@@ -25,7 +25,6 @@ class _CompareScreenState extends State<CompareScreen> {
   bool _isUploading = false;
   bool _isComparing = false;
 
-  // UI state
   bool _hasInitialImage = false;
   bool _hasComparisonImages = false;
 
@@ -56,10 +55,27 @@ class _CompareScreenState extends State<CompareScreen> {
         _isUploading = true;
       });
 
+      // Crop the image
+      final CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Cắt ảnh',
+            toolbarColor: Colors.teal,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(title: 'Cắt ảnh', aspectRatioLockEnabled: true),
+        ],
+      );
+
+      if (croppedFile == null) return;
+
       // Use the service to upload image
       final CompareProcess result = await CompareService.uploadInitialImage(
         userId: _userId!,
-        imageFile: File(image.path),
+        imageFile: File(croppedFile.path),
       );
 
       if (!mounted) return;
@@ -94,7 +110,6 @@ class _CompareScreenState extends State<CompareScreen> {
     }
   }
 
-  // Feature 2: Upload New Image & Compare
   Future<void> _pickAndCompareImage() async {
     if (_processId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -114,15 +129,31 @@ class _CompareScreenState extends State<CompareScreen> {
 
       if (image == null) return;
 
+      // Crop the image
+      final CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Cắt ảnh',
+            toolbarColor: Colors.teal,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(title: 'Cắt ảnh', aspectRatioLockEnabled: true),
+        ],
+      );
+
+      if (croppedFile == null) return;
+
       setState(() {
         _isComparing = true;
       });
 
-      // Use the service to compare images
       final CompareResult result = await CompareService.compareImages(
         userId: _userId!,
         processId: _processId!,
-        imageFile: File(image.path),
+        imageFile: File(croppedFile.path),
       );
 
       if (!mounted) return;
@@ -301,7 +332,7 @@ class _CompareScreenState extends State<CompareScreen> {
                   Icon(Icons.warning, color: Colors.orange.shade600),
                   const SizedBox(width: 8),
                   const Text(
-                    'Vui lòng tải ảnh ban đầu trước',
+                    'Vui lòng tải ảnh ban đầu',
                     style: TextStyle(color: Colors.orange),
                   ),
                 ],

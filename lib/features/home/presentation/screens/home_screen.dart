@@ -7,7 +7,6 @@ import 'package:flutter_application_latn/features/arcticles/arcticles_screen.dar
 import 'package:flutter_application_latn/features/arcticles/arcticles_detail.dart';
 import 'package:flutter_application_latn/features/arcticles/models/article_model.dart';
 import 'package:flutter_application_latn/features/arcticles/services/article_service.dart';
-
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_latn/features/hospital/hospital_detail.dart';
@@ -15,6 +14,7 @@ import 'package:flutter_application_latn/features/hospital/list_hospital.dart';
 import 'package:flutter_application_latn/features/hospital/models/hospital_model.dart';
 import 'package:flutter_application_latn/features/hospital/services/hospital_service.dart';
 import 'package:flutter_application_latn/features/pharmacies/pharmacies_screen.dart';
+import 'package:flutter_application_latn/core/utils/text_utils.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -100,6 +100,7 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
     {'icon': Icons.local_hospital, 'label': 'Bác sĩ'},
     {'icon': Icons.local_pharmacy, 'label': 'Nhà thuốc'},
     {'icon': Icons.local_hospital_outlined, 'label': 'Bệnh viện'},
+    {'icon': Icons.search, 'label': 'Tra cứu bệnh'},
   ];
 
   @override
@@ -110,10 +111,9 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
     return ListView(
       padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
       children: [
+        SizedBox(height: screenHeight * 0.03),
         _buildServiceMenu(),
-        SizedBox(height: screenHeight * 0.03), // Responsive spacing
-        const _AnimatedBannerCard(),
-        SizedBox(height: screenHeight * 0.03), // Responsive spacing
+        SizedBox(height: screenHeight * 0.03),
         _buildSectionTitle(
           'Bệnh viện hàng đầu',
           context,
@@ -147,24 +147,21 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    final crossAxisCount = 3;
-    final childAspectRatio =
-        screenWidth > 600 ? 1.0 : (screenWidth > 400 ? 1.2 : 1.5);
-    final spacing = screenWidth * 0.02;
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: crossAxisCount,
-      mainAxisSpacing: spacing,
-      crossAxisSpacing: spacing,
-      childAspectRatio: childAspectRatio,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children:
           _serviceItems
               .map(
-                (item) => _AnimatedIconMenu(
-                  icon: item['icon'] as IconData,
-                  label: item['label'] as String,
+                (item) => Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.01,
+                    ),
+                    child: _AnimatedIconMenu(
+                      icon: item['icon'] as IconData,
+                      label: item['label'] as String,
+                    ),
+                  ),
                 ),
               )
               .toList(),
@@ -189,7 +186,7 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: screenWidth * 0.045, // Responsive font size
+                  fontSize: screenWidth * 0.045,
                   fontWeight: FontWeight.bold,
                 ),
                 maxLines: 1,
@@ -198,7 +195,7 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
               Container(
                 margin: EdgeInsets.only(top: screenHeight * 0.002),
                 height: 3,
-                width: screenWidth * 0.1, // Responsive width
+                width: screenWidth * 0.1,
                 decoration: BoxDecoration(
                   color: Colors.teal,
                   borderRadius: BorderRadius.circular(2),
@@ -220,14 +217,15 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
 
   Widget _buildTopHospitals() {
     final screenHeight = MediaQuery.of(context).size.height;
-    final hospitalCardHeight = screenHeight * 0.25; // Responsive height
+    final hospitalCardHeight =
+        screenHeight * 0.23; // slightly reduced for elegance
 
     if (isLoadingHospitals) {
       return SizedBox(
         height: hospitalCardHeight,
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF19C3AE)),
           ),
         ),
       );
@@ -242,14 +240,14 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
             children: [
               Icon(
                 Icons.local_hospital_outlined,
-                size: screenHeight * 0.08, // Responsive icon size
+                size: screenHeight * 0.08,
                 color: Colors.grey[400],
               ),
               SizedBox(height: screenHeight * 0.02),
               Text(
                 'Không có bệnh viện nào',
                 style: TextStyle(
-                  fontSize: screenHeight * 0.022, // Responsive font size
+                  fontSize: screenHeight * 0.022,
                   fontWeight: FontWeight.bold,
                   color: Colors.grey[600],
                 ),
@@ -272,7 +270,149 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
         itemBuilder: (_, index) {
           final hospital = topHospitals[index];
           final hospitalData = hospital.toUIMap();
-          return _AnimatedHospitalCard(hospital: hospitalData);
+          return Stack(
+            children: [
+              Card(
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                color: Colors.white,
+                margin: EdgeInsets.zero,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.46,
+                  padding: EdgeInsets.all(10), // reduced padding
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) =>
+                                        HospitalScreen(hospital: hospitalData),
+                              ),
+                            );
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child:
+                                hospitalData['image'] != null &&
+                                        hospitalData['image']!.isNotEmpty
+                                    ? Image.network(
+                                      hospitalData['image']!,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : Container(
+                                      width: double.infinity,
+                                      color: Color(
+                                        0xFF19C3AE,
+                                      ).withOpacity(0.08),
+                                      child: Icon(
+                                        Icons.local_hospital,
+                                        color: Color(0xFF19C3AE),
+                                        size: 36,
+                                      ),
+                                    ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        hospitalData['name'] ?? '',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15, // reduced font size
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.medical_services,
+                            color: Color(0xFF19C3AE),
+                            size: 15,
+                          ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              hospitalData['specialty'] ?? '',
+                              style: TextStyle(
+                                color: Colors.teal[700],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber, size: 15),
+                          const SizedBox(width: 3),
+                          Text(
+                            hospitalData['rating'] ?? '4.5',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber[800],
+                            ),
+                          ),
+                          const Spacer(),
+                          const SizedBox(width: 4),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              backgroundColor: Color(
+                                0xFF19C3AE,
+                              ).withOpacity(0.08),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              minimumSize: Size(0, 0),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => HospitalScreen(
+                                        hospital: hospitalData,
+                                      ),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'Chi tiết',
+                              style: TextStyle(
+                                color: Color(0xFF19C3AE),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
         },
       ),
     );
@@ -284,32 +424,35 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
 
     if (isLoadingArticles) {
       return Container(
-        padding: EdgeInsets.all(screenWidth * 0.03), // Responsive padding
+        padding: EdgeInsets.all(screenWidth * 0.03),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(
-            screenWidth * 0.03,
-          ), // Responsive radius
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(screenWidth * 0.03),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF19C3AE).withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: screenWidth * 0.2, // Responsive width
-              height: screenHeight * 0.08, // Responsive height
+              width: screenWidth * 0.2,
+              height: screenHeight * 0.08,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(
-                  screenWidth * 0.02,
-                ), // Responsive radius
+                color: Color(0xFF19C3AE).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(screenWidth * 0.02),
               ),
               child: const Center(
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF19C3AE)),
                 ),
               ),
             ),
-            SizedBox(width: screenWidth * 0.03), // Responsive spacing
+            SizedBox(width: screenWidth * 0.03),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,15 +461,16 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
                     "Đang tải bài viết...",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: screenWidth * 0.04, // Responsive font size
+                      fontSize: screenWidth * 0.04,
+                      color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.005), // Responsive spacing
+                  SizedBox(height: screenHeight * 0.005),
                   Text(
                     "Vui lòng chờ",
                     style: TextStyle(
                       color: Colors.grey,
-                      fontSize: screenWidth * 0.03, // Responsive font size
+                      fontSize: screenWidth * 0.03,
                     ),
                   ),
                 ],
@@ -339,31 +483,34 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
 
     if (topArticles.isEmpty) {
       return Container(
-        padding: EdgeInsets.all(screenWidth * 0.03), // Responsive padding
+        padding: EdgeInsets.all(screenWidth * 0.03),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(
-            screenWidth * 0.03,
-          ), // Responsive radius
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(screenWidth * 0.03),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF19C3AE).withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: screenWidth * 0.2, // Responsive width
-              height: screenHeight * 0.08, // Responsive height
+              width: screenWidth * 0.2,
+              height: screenHeight * 0.08,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(
-                  screenWidth * 0.02,
-                ), // Responsive radius
+                color: Color(0xFF19C3AE).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(screenWidth * 0.02),
               ),
               child: Icon(
                 Icons.article_outlined,
                 color: Colors.grey[400],
-                size: screenWidth * 0.08, // Responsive icon size
+                size: screenWidth * 0.08,
               ),
             ),
-            SizedBox(width: screenWidth * 0.03), // Responsive spacing
+            SizedBox(width: screenWidth * 0.03),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,15 +519,16 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
                     "Không có bài viết nào",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: screenWidth * 0.04, // Responsive font size
+                      fontSize: screenWidth * 0.04,
+                      color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.005), // Responsive spacing
+                  SizedBox(height: screenHeight * 0.005),
                   Text(
                     "Hãy quay lại sau",
                     style: TextStyle(
                       color: Colors.grey,
-                      fontSize: screenWidth * 0.03, // Responsive font size
+                      fontSize: screenWidth * 0.03,
                     ),
                   ),
                 ],
@@ -404,29 +552,32 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
         );
       },
       child: Container(
-        padding: EdgeInsets.all(screenWidth * 0.03), // Responsive padding
+        padding: EdgeInsets.all(screenWidth * 0.03),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(
-            screenWidth * 0.03,
-          ), // Responsive radius
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(screenWidth * 0.03),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF19C3AE).withOpacity(0.08),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: screenWidth * 0.2, // Responsive width
-              height: screenHeight * 0.08, // Responsive height
+              width: screenWidth * 0.2,
+              height: screenHeight * 0.08,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  screenWidth * 0.02,
-                ), // Responsive radius
+                borderRadius: BorderRadius.circular(screenWidth * 0.02),
                 image: DecorationImage(
                   fit: BoxFit.cover,
                   image: NetworkImage(article.mainImage),
                 ),
               ),
             ),
-            SizedBox(width: screenWidth * 0.03), // Responsive spacing
+            SizedBox(width: screenWidth * 0.03),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,17 +586,18 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
                     article.title,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: screenWidth * 0.04, // Responsive font size
+                      fontSize: screenWidth * 0.04,
+                      color: Colors.black87,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: screenHeight * 0.005), // Responsive spacing
+                  SizedBox(height: screenHeight * 0.005),
                   Text(
                     "${article.date.day} tháng ${article.date.month} năm ${article.date.year} • Đọc trong ${_calculateReadTime(article.content)} phút",
                     style: TextStyle(
                       color: Colors.grey,
-                      fontSize: screenWidth * 0.03, // Responsive font size
+                      fontSize: screenWidth * 0.03,
                     ),
                   ),
                 ],
@@ -503,6 +655,14 @@ class _AnimatedIconMenuState extends State<_AnimatedIconMenu> {
               MaterialPageRoute(builder: (_) => const PharmaciesScreen()),
             );
             break;
+          case 'Tra cứu bệnh':
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tính năng tra cứu bệnh đang phát triển'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            break;
           default:
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -538,385 +698,6 @@ class _AnimatedIconMenuState extends State<_AnimatedIconMenu> {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AnimatedHospitalCard extends StatefulWidget {
-  final Map<String, String> hospital;
-  const _AnimatedHospitalCard({required this.hospital});
-  @override
-  State<_AnimatedHospitalCard> createState() => _AnimatedHospitalCardState();
-}
-
-class _AnimatedHospitalCardState extends State<_AnimatedHospitalCard> {
-  double _scale = 1.0;
-  @override
-  Widget build(BuildContext context) {
-    final hospital = widget.hospital;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    // Calculate responsive card dimensions
-    final cardWidth = screenWidth * 0.4; // 40% of screen width
-    final cardHeight = screenHeight * 0.25; // 25% of screen height
-    final minWidth = 140.0;
-    final maxWidth = 200.0;
-    final finalWidth = cardWidth.clamp(minWidth, maxWidth);
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _scale = 0.96),
-      onTapUp: (_) => setState(() => _scale = 1.0),
-      onTapCancel: () => setState(() => _scale = 1.0),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => HospitalScreen(hospital: hospital)),
-        );
-      },
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 120),
-        child: Container(
-          width: finalWidth,
-          height: cardHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              screenWidth * 0.05,
-            ), // Responsive radius
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.teal.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-                spreadRadius: 0,
-              ),
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(
-                    screenWidth * 0.05,
-                  ), // Responsive radius
-                  topRight: Radius.circular(
-                    screenWidth * 0.05,
-                  ), // Responsive radius
-                ),
-                child: Container(
-                  height: cardHeight * 0.5, // 50% of card height
-                  width: double.infinity,
-                  child:
-                      (hospital['image']?.isNotEmpty == true)
-                          ? Image.network(
-                            hospital['image']!,
-                            width: double.infinity,
-                            height: cardHeight * 0.5, // 50% of card height
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                width: double.infinity,
-                                height: cardHeight * 0.5, // 50% of card height
-                                color: Colors.grey[200],
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                                null
-                                            ? loadingProgress
-                                                    .cumulativeBytesLoaded /
-                                                loadingProgress
-                                                    .expectedTotalBytes!
-                                            : null,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.teal,
-                                    ),
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return _buildHomeCardFallbackImage();
-                            },
-                          )
-                          : _buildHomeCardFallbackImage(),
-                ),
-              ),
-
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(
-                    screenWidth * 0.025,
-                  ), // Responsive padding
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              hospital['name'] ?? '',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize:
-                                    screenWidth * 0.032, // Responsive font size
-                                height: 1.2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(
-                              height: screenHeight * 0.005,
-                            ), // Responsive spacing
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal:
-                                    screenWidth * 0.015, // Responsive padding
-                                vertical:
-                                    screenHeight * 0.002, // Responsive padding
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.teal.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(
-                                  screenWidth * 0.02,
-                                ), // Responsive radius
-                              ),
-                              child: Text(
-                                hospital['specialty'] ?? '',
-                                style: TextStyle(
-                                  color: Colors.teal[700],
-                                  fontSize:
-                                      screenWidth *
-                                      0.022, // Responsive font size
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  screenWidth * 0.01, // Responsive padding
-                              vertical:
-                                  screenHeight * 0.001, // Responsive padding
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(
-                                screenWidth * 0.015,
-                              ), // Responsive radius
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  size:
-                                      screenWidth *
-                                      0.025, // Responsive icon size
-                                  color: Colors.amber,
-                                ),
-                                SizedBox(
-                                  width: screenWidth * 0.002,
-                                ), // Responsive spacing
-                                Text(
-                                  hospital['rating'] ?? '4.5',
-                                  style: TextStyle(
-                                    fontSize:
-                                        screenWidth *
-                                        0.022, // Responsive font size
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHomeCardFallbackImage() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return Container(
-      width: double.infinity,
-      height: screenHeight * 0.125, // Responsive height
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.teal.withOpacity(0.1), Colors.teal.withOpacity(0.05)],
-        ),
-      ),
-      child: Icon(
-        Icons.local_hospital,
-        color: Colors.teal,
-        size: screenWidth * 0.1, // Responsive icon size
-      ),
-    );
-  }
-}
-
-class _AnimatedBannerCard extends StatefulWidget {
-  const _AnimatedBannerCard();
-  @override
-  State<_AnimatedBannerCard> createState() => _AnimatedBannerCardState();
-}
-
-class _AnimatedBannerCardState extends State<_AnimatedBannerCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _opacity;
-  late final Animation<Offset> _offset;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _opacity = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
-    _offset = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    Future.delayed(
-      const Duration(milliseconds: 300),
-      () => _controller.forward(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder:
-          (context, child) => Opacity(
-            opacity: _opacity.value,
-            child: SlideTransition(position: _offset, child: child),
-          ),
-      child: const _BannerCard(),
-    );
-  }
-}
-
-class _BannerCard extends StatelessWidget {
-  const _BannerCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(
-        screenWidth * 0.04,
-      ), // Responsive radius
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(
-              screenWidth * 0.04,
-            ), // Responsive radius
-            border: Border.all(color: Colors.teal.shade100, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Bảo vệ sớm cho sức khỏe gia đình bạn",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.04, // Responsive font size
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.015,
-                    ), // Responsive spacing
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            screenWidth * 0.02,
-                          ), // Responsive radius
-                        ),
-                      ),
-                      child: Text(
-                        "Tìm hiểu thêm",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: screenWidth * 0.035, // Responsive font size
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: screenWidth * 0.04), // Responsive spacing
-              ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  screenWidth * 0.03,
-                ), // Responsive radius
-                child: Image.network(
-                  "https://media.thanhtravietnam.vn/public/uploads/2025/05/16/682679dbda99ce573b8d6b93.jpg",
-                  width: screenWidth * 0.2, // Responsive width
-                  height: screenHeight * 0.12, // Responsive height
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -970,16 +751,6 @@ class BeautifulDrawer extends StatelessWidget {
       'icon': Icons.article,
       'label': 'Bài báo',
       'builder': (BuildContext context) => ArticlesScreen(),
-    },
-    {
-      'icon': Icons.login,
-      'label': 'Đăng nhập',
-      'builder': (BuildContext context) => const LoginScreen(),
-    },
-    {
-      'icon': Icons.app_registration,
-      'label': 'Đăng ký',
-      'builder': (BuildContext context) => RegisterScreen(),
     },
   ];
 
@@ -1195,34 +966,28 @@ class _DrawerItem extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.03, // Responsive padding
-        vertical: screenHeight * 0.005, // Responsive padding
+        horizontal: screenWidth * 0.03,
+        vertical: screenHeight * 0.005,
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: Colors.teal,
-          size: screenWidth * 0.055, // Responsive icon size
-        ),
+        leading: Icon(icon, color: Colors.teal, size: screenWidth * 0.055),
         title: Text(
           label,
           style: TextStyle(
             fontWeight: FontWeight.w500,
-            fontSize: screenWidth * 0.04, // Responsive font size
+            fontSize: screenWidth * 0.04,
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          size: screenWidth * 0.04, // Responsive icon size
+          size: screenWidth * 0.04,
           color: Colors.grey[400],
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            screenWidth * 0.035,
-          ), // Responsive radius
+          borderRadius: BorderRadius.circular(screenWidth * 0.035),
         ),
         contentPadding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.03, // Responsive padding
+          horizontal: screenWidth * 0.03,
           vertical: 0,
         ),
         dense: true,

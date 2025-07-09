@@ -103,8 +103,10 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
   }
 
   Future<String?> _getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('_id');
+  final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getString('userId');
+    print('Lấy userId từ SharedPreferences: $id');
+    return id;
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -351,14 +353,6 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          const Text(
-            "Chẩn đoán da liễu",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF199A8E),
-            ),
-          ),
         ],
       ),
     );
@@ -386,12 +380,12 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
         ),
         const SizedBox(height: 8),
         Text(
-          "Hãy chọn hoặc chụp ảnh vùng da cần chẩn đoán.\nẢnh rõ nét giúp kết quả chính xác hơn!",
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: Colors.black87,
-            height: 1.5,
+          "Hãy chọn hoặc chụp ảnh vùng da cần chẩn đoán. Ảnh rõ nét giúp kết quả chính xác hơn!",
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: const Color.fromARGB(221, 109, 103, 103),
+            height: 1.2,
           ),
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.left,
         ),
       ],
     );
@@ -569,9 +563,9 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
               Text(
                 "Hỗ trợ JPG, JPEG, PNG. Tối đa 5MB",
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 9,
                   color: Colors.orange[700],
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -826,7 +820,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                 label: Text(
                   _selectedImage == null ? "Chọn ảnh" : "Tiếp tục",
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -878,7 +872,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                       Text(
                         _tutorialSteps[_currentTutorialStep].title,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF199A8E),
                         ),
@@ -920,6 +914,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                               _currentTutorialStep < _tutorialSteps.length - 1
                                   ? "Tiếp tục"
                                   : "Bắt đầu",
+                                  style: TextStyle(fontSize: 12),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF199A8E),

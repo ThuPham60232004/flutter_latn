@@ -3,6 +3,8 @@ import 'arcticles_detail.dart';
 import 'models/article_model.dart';
 import 'services/article_service.dart';
 import '../../core/config/responsive_text.dart';
+import '../../core/utils/text_utils.dart';
+import 'arcticles_list.dart';
 
 class ArticlesScreen extends StatefulWidget {
   const ArticlesScreen({Key? key}) : super(key: key);
@@ -44,11 +46,10 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
         isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      // Show error message
       if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi tải bài viết: $e'),
@@ -247,29 +248,23 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                         'Bài viết xu hướng',
                         style: ResponsiveText.sectionHeaderStyle,
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          // Show all articles in trending section
-                          setState(() {
-                            // For now, just show a message that all articles are displayed
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Tất cả bài viết đã được hiển thị',
-                                ),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          });
-                        },
-                        child: Text(
-                          'Xem tất cả',
-                          style: TextStyle(
-                            color: Colors.teal,
-                            fontSize: ResponsiveText.bodyMedium,
+                        TextButton(
+                        onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ArticlesListPage(),
                           ),
+                        );
+                      },
+                      child: Text(
+                        'Xem tất cả',
+                        style: TextStyle(
+                          color: Colors.teal,
+                          fontSize: 13,
                         ),
                       ),
+                    ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -278,8 +273,8 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount:
-                          filteredArticles.length > 5
-                              ? 5
+                          filteredArticles.length > 4
+                              ? 4
                               : filteredArticles.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 16),
                       itemBuilder: (context, index) {
@@ -300,27 +295,23 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                         'Bài viết liên quan',
                         style: ResponsiveText.sectionHeaderStyle,
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Tất cả bài viết đã được hiển thị',
-                                ),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          });
-                        },
-                        child: Text(
-                          'Xem tất cả',
-                          style: TextStyle(
-                            color: Colors.teal,
-                            fontSize: ResponsiveText.bodyMedium,
+                      TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ArticlesListPage(),
                           ),
+                        );
+                      },
+                      child: Text(
+                        'Xem tất cả',
+                        style: TextStyle(
+                          color: Colors.teal,
+                          fontSize: 13,
                         ),
                       ),
+                    ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -613,12 +604,12 @@ class _AnimatedRelatedArticleTileState
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
                   widget.article['image']!,
-                  width: 60,
+                  width: 52,
                   height: 60,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      width: 60,
+                      width: 52,
                       height: 60,
                       color: Colors.grey[200],
                       child: Icon(
@@ -647,36 +638,43 @@ class _AnimatedRelatedArticleTileState
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text(
-                          widget.article['date']!,
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: ResponsiveText.caption,
+                        Expanded(
+                          child: Text(
+                            widget.article['date']!,
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: ResponsiveText.caption,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          widget.article['readTime']!,
-                          style: TextStyle(
-                            color: Colors.teal,
-                            fontSize: ResponsiveText.caption,
+                        Expanded(
+                          child: Text(
+                            widget.article['readTime']!,
+                            style: TextStyle(
+                              color: Colors.teal,
+                              fontSize: ResponsiveText.caption,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 4, right: 8),
-                child: Icon(
-                  Icons.bookmark_border,
-                  color: Colors.teal,
-                  size: 24,
+              SizedBox(
+                width: 28,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4, right: 8),
+                  child: Icon(
+                    Icons.bookmark_border,
+                    color: Colors.teal,
+                    size: 22,
+                  ),
                 ),
               ),
             ],

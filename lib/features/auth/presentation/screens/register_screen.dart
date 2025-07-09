@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_latn/features/auth/presentation/widgets/register_widget.dart';
+import 'package:flutter_application_latn/features/auth/presentation/screens/forgot_screen.dart';
+import 'package:flutter_application_latn/features/auth/presentation/screens/login_screen.dart';
+
 class RegisterScreen extends StatefulWidget {
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
@@ -28,17 +31,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       if (password.isEmpty) throw "Mật khẩu không được để trống";
       if (password.length < 6) throw "Mật khẩu phải có ít nhất 6 ký tự";
-      if (!RegExp(r'[A-Z]').hasMatch(password)) throw "Mật khẩu phải chứa ít nhất một chữ hoa";
-      if (!RegExp(r'\d').hasMatch(password)) throw "Mật khẩu phải chứa ít nhất một chữ số";
-      if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password)) throw "Mật khẩu phải chứa ít nhất một ký tự đặc biệt";
-      if (!RegExp(r"^\d{10,11}$").hasMatch(phone)) throw "Số điện thoại phải có 10 hoặc 11 chữ số";
-      if (!RegExp(r"^[^@]+@[^@]+\.[^@]+").hasMatch(email)) throw "Email không hợp lệ";
+      if (!RegExp(r'[A-Z]').hasMatch(password))
+        throw "Mật khẩu phải chứa ít nhất một chữ hoa";
+      if (!RegExp(r'\d').hasMatch(password))
+        throw "Mật khẩu phải chứa ít nhất một chữ số";
+      if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password))
+        throw "Mật khẩu phải chứa ít nhất một ký tự đặc biệt";
+      if (!RegExp(r"^\d{10,11}$").hasMatch(phone))
+        throw "Số điện thoại phải có 10 hoặc 11 chữ số";
+      if (!RegExp(r"^[^@]+@[^@]+\.[^@]+").hasMatch(email))
+        throw "Email không hợp lệ";
 
       setState(() {
         errorMessage = null;
       });
 
-      final url = Uri.parse("https://fastapi-service-748034725478.europe-west4.run.app//api/register");
+      final url = Uri.parse(
+        "https://fastapi-service-748034725478.europe-west4.run.app//api/register",
+      );
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -52,15 +62,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return const SuccessDialog();
-            },
-          );
-        }
-      else {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const SuccessDialog();
+          },
+        );
+      } else {
         final responseBody = jsonDecode(response.body);
         setState(() {
           errorMessage = responseBody['message'] ?? 'Đăng ký thất bại';
@@ -73,18 +82,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  InputDecoration inputStyle(IconData icon, String hint, {bool isError = false}) {
+  InputDecoration inputStyle(
+    IconData icon,
+    String hint, {
+    bool isError = false,
+  }) {
     return InputDecoration(
       prefixIcon: Icon(icon),
       hintText: hint,
       errorText: isError ? errorMessage : null,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: isError ? Colors.red : outlineBorderColor),
+        borderSide: BorderSide(
+          color: isError ? Colors.red : outlineBorderColor,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: isError ? Colors.red : outlineBorderColor),
+        borderSide: BorderSide(
+          color: isError ? Colors.red : outlineBorderColor,
+        ),
       ),
     );
   }
@@ -110,7 +127,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        child: Center(
+          child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: SingleChildScrollView(
             child: Column(
@@ -125,34 +143,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: 32),
                 TextField(
                   controller: nameController,
-                  decoration: inputStyle(Icons.person_outline, 'Nhập tên của bạn'),
+                  decoration: inputStyle(
+                    Icons.person_outline,
+                    'Nhập tên của bạn',
+                  ),
                 ),
                 SizedBox(height: 16),
                 TextField(
                   controller: emailController,
-                  decoration: inputStyle(Icons.email_outlined, 'Nhập email của bạn'),
+                  decoration: inputStyle(
+                    Icons.email_outlined,
+                    'Nhập email của bạn',
+                  ),
                 ),
                 SizedBox(height: 16),
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: inputStyle(Icons.phone_outlined, 'Nhập số điện thoại'),
+                  decoration: inputStyle(
+                    Icons.phone_outlined,
+                    'Nhập số điện thoại',
+                  ),
                 ),
                 SizedBox(height: 16),
                 TextField(
                   controller: passwordController,
                   obscureText: obscurePassword,
-                  decoration: inputStyle(Icons.lock_outline, 'Nhập mật khẩu của bạn', isError: isError)
-                      .copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () {
-                            setState(() {
-                              obscurePassword = !obscurePassword;
-                            });
-                          },
-                        ),
+                  decoration: inputStyle(
+                    Icons.lock_outline,
+                    'Nhập mật khẩu của bạn',
+                    isError: isError,
+                  ).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
+                      onPressed: () {
+                        setState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
                 ),
                 if (isError)
                   Padding(
@@ -167,12 +201,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onTap: () => _selectDate(context),
                   child: AbsorbPointer(
                     child: TextField(
-                      decoration: inputStyle(Icons.calendar_today_outlined, 'Chọn ngày sinh'),
+                      decoration: inputStyle(
+                        Icons.calendar_today_outlined,
+                        'Chọn ngày sinh',
+                      ),
                       controller: TextEditingController(text: dateOfBirth),
                     ),
                   ),
                 ),
-                SizedBox(height: 16),
+                
                 Row(
                   children: [
                     Checkbox(
@@ -212,7 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
+                      backgroundColor: Color(0xFF0F968A),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
@@ -229,23 +266,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Center(
                   child: Wrap(
                     children: [
-                      Text('Bạn đã có tài khoản? '),
+                      Text("Đã có tài khoản? "),
                       GestureDetector(
                         onTap: () {
-                          // Điều hướng sang màn hình đăng nhập
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
                         },
                         child: Text(
-                          'Đăng nhập',
-                          style: TextStyle(color: Colors.teal),
+                          "Đăng nhập",
+                          style: TextStyle(color: Color(0xFF0F968A)),
                         ),
                       ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),
         ),
+        )
       ),
     );
   }

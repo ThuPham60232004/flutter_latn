@@ -51,7 +51,7 @@ class _Differentiation_Question_ModalState
   Future<void> fetchQuestions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('_id') ?? '';
+      final userId = prefs.getString('userId') ?? '';
 
       final url = Uri.parse(
         'https://fastapi-service-748034725478.europe-west4.run.app/api/differentiation_questions?key=$userId',
@@ -100,7 +100,7 @@ class _Differentiation_Question_ModalState
 
   Future<void> submitAnswers() async {
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('_id') ?? '';
+    final userId = prefs.getString('userId') ?? '';
 
     List<String> userDescriptions =
         controllers.entries
