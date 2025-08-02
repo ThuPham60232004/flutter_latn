@@ -7,7 +7,7 @@ class Article {
   final String author;
   final String authorImage;
   final String authorDescription;
-  final List<String> tags;
+  final List<String> tags; // Now tag names, not IDs
 
   Article({
     required this.id,

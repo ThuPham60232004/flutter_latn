@@ -16,11 +16,13 @@ class _ProfilePageState extends State<ProfilePage> {
   ProfileModel? _profile;
   bool _isLoading = true;
   String? _error;
+  String? _avatarUrl;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadAvatarUrl();
   }
 
   Future<void> _loadProfile() async {
@@ -43,6 +45,307 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _avatarUrl = prefs.getString('avatarUrl');
+    });
+  }
+
+  Future<void> _updateProfile(ProfileModel updatedProfile) async {
+    // Validate fields
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+');
+    if (updatedProfile.name.trim().isEmpty) {
+      _showError('Tên không được để trống');
+      return;
+    }
+    if (!emailRegex.hasMatch(updatedProfile.email)) {
+      _showError('Email không hợp lệ');
+      return;
+    }
+    if (updatedProfile.phone != null &&
+        updatedProfile.phone!.isNotEmpty &&
+        updatedProfile.phone!.length < 8) {
+      _showError('Số điện thoại không hợp lệ');
+      return;
+    }
+    if (updatedProfile.dateOfBirth == null) {
+      _showError('Ngày sinh không hợp lệ');
+      return;
+    }
+    if (updatedProfile.avatarUrl == null || updatedProfile.avatarUrl!.isEmpty) {
+      _showError('Ảnh đại diện không hợp lệ');
+      return;
+    }
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      await ProfileService.updateUserProfile(updatedProfile.toJson());
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('avatarUrl', updatedProfile.avatarUrl!);
+      await prefs.setString('userId', updatedProfile.id);
+      await prefs.setString('userName', updatedProfile.name);
+      await prefs.setString('userEmail', updatedProfile.email);
+      if (updatedProfile.phone != null)
+        await prefs.setString('userPhone', updatedProfile.phone!);
+      if (updatedProfile.dateOfBirth != null)
+        await prefs.setString(
+          'userDob',
+          updatedProfile.dateOfBirth!.toIso8601String(),
+        );
+      setState(() {
+        _profile = updatedProfile;
+        _avatarUrl = updatedProfile.avatarUrl;
+        _isLoading = false;
+      });
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Cập nhật thành công!')));
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showError('Cập nhật thất bại: $e');
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+  }
+
+  // Replace the old dialog with a beautiful modal bottom sheet
+  void _showEditProfileSheet() {
+    final nameController = TextEditingController(text: _profile?.name ?? '');
+    final emailController = TextEditingController(text: _profile?.email ?? '');
+    final phoneController = TextEditingController(text: _profile?.phone ?? '');
+    final dobController = TextEditingController(
+      text:
+          _profile?.dateOfBirth != null
+              ? _profile!.dateOfBirth!.toIso8601String().substring(0, 10)
+              : '',
+    );
+    final avatarController = TextEditingController(
+      text: _avatarUrl ?? _profile?.avatarUrl ?? '',
+    );
+    DateTime? selectedDob = _profile?.dateOfBirth;
+    String? errorText;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundImage: NetworkImage(
+                            avatarController.text.isNotEmpty
+                                ? avatarController.text
+                                : 'https://cdn-media.sforum.vn/storage/app/media/1image/anh-hoat-hinh-cute-thumb.jpg',
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Color(0xFF19C3AE),
+                          ),
+                          onPressed: () {
+                            setModalState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Họ và tên',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: phoneController,
+                      decoration: const InputDecoration(
+                        labelText: 'Số điện thoại',
+                        prefixIcon: Icon(Icons.phone),
+                      ),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dobController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: 'Ngày sinh',
+                        prefixIcon: const Icon(Icons.cake),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDob ?? DateTime(2000, 1, 1),
+                              firstDate: DateTime(1900),
+                              lastDate: DateTime.now(),
+                            );
+                            if (picked != null) {
+                              setModalState(() {
+                                selectedDob = picked;
+                                dobController.text = picked
+                                    .toIso8601String()
+                                    .substring(0, 10);
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: avatarController,
+                      decoration: const InputDecoration(
+                        labelText: 'Avatar URL',
+                        prefixIcon: Icon(Icons.image),
+                      ),
+                      onChanged: (_) => setModalState(() {}),
+                    ),
+                    if (errorText != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          errorText!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF19C3AE),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Text(
+                                  'Lưu thay đổi',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                        onPressed:
+                            _isLoading
+                                ? null
+                                : () async {
+                                  final emailRegex = RegExp(
+                                    r'^[^@\s]+@[^@\s]+\.[^@\s]+',
+                                  );
+                                  if (nameController.text.trim().isEmpty) {
+                                    setModalState(
+                                      () =>
+                                          errorText = 'Tên không được để trống',
+                                    );
+                                    return;
+                                  }
+                                  if (!emailRegex.hasMatch(
+                                    emailController.text,
+                                  )) {
+                                    setModalState(
+                                      () => errorText = 'Email không hợp lệ',
+                                    );
+                                    return;
+                                  }
+                                  if (phoneController.text.isNotEmpty &&
+                                      phoneController.text.length < 8) {
+                                    setModalState(
+                                      () =>
+                                          errorText =
+                                              'Số điện thoại không hợp lệ',
+                                    );
+                                    return;
+                                  }
+                                  if (selectedDob == null) {
+                                    setModalState(
+                                      () =>
+                                          errorText = 'Ngày sinh không hợp lệ',
+                                    );
+                                    return;
+                                  }
+                                  if (avatarController.text.isEmpty) {
+                                    setModalState(
+                                      () =>
+                                          errorText =
+                                              'Ảnh đại diện không hợp lệ',
+                                    );
+                                    return;
+                                  }
+                                  setModalState(() => errorText = null);
+                                  await _updateProfile(
+                                    ProfileModel(
+                                      id: _profile?.id ?? '',
+                                      name: nameController.text,
+                                      email: emailController.text,
+                                      phone: phoneController.text,
+                                      password: _profile?.password,
+                                      dateOfBirth: selectedDob,
+                                      avatarUrl: avatarController.text,
+                                    ),
+                                  );
+                                  if (context.mounted)
+                                    Navigator.of(context).pop();
+                                },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showComingSoon(BuildContext context) {
@@ -92,23 +395,28 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 48,
-                      backgroundImage: const NetworkImage(
-                        'https://randomuser.me/api/portraits/women/44.jpg',
+                      backgroundImage: NetworkImage(
+                        _avatarUrl ??
+                            _profile?.displayAvatarUrl ??
+                            'https://cdn-media.sforum.vn/storage/app/media/1image/anh-hoat-hinh-cute-thumb.jpg',
                       ),
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black12, blurRadius: 4),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 22,
-                        color: Color(0xFF19C3AE),
+                    GestureDetector(
+                      onTap: _showEditProfileSheet,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black12, blurRadius: 4),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(6),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          size: 22,
+                          color: Color(0xFF19C3AE),
+                        ),
                       ),
                     ),
                   ],
@@ -245,30 +553,6 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: Icons.cake,
         ),
         const SizedBox(height: 18),
-        const _SectionHeader(title: 'Thư viện ảnh'),
-        _PhotoGallerySection(),
-        const SizedBox(height: 24),
-        const _SectionHeader(title: 'Chức năng'),
-        _MenuItem(
-          icon: Icons.favorite_border,
-          label: 'Đã lưu',
-          onTap: () => _showComingSoon(context),
-        ),
-        _MenuItem(
-          icon: Icons.calendar_today,
-          label: 'Lịch hẹn',
-          onTap: () => _showComingSoon(context),
-        ),
-        _MenuItem(
-          icon: Icons.credit_card,
-          label: 'Phương thức thanh toán',
-          onTap: () => _showComingSoon(context),
-        ),
-        _MenuItem(
-          icon: Icons.help_outline,
-          label: 'Câu hỏi thường gặp',
-          onTap: () => _showComingSoon(context),
-        ),
         _MenuItem(
           icon: Icons.logout,
           label: 'Đăng xuất',
@@ -331,10 +615,10 @@ class _PhotoGallerySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<String> defaultPhotos = [
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=80&h=80',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=80&h=80',
-      'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=facearea&w=80&h=80',
-      'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=facearea&w=80&h=80',
+      'https://hoseiki.vn/wp-content/uploads/2025/03/anime-chibi-cute-girl-23.jpg',
+      'https://idep.edu.vn/upload/2025/02/hinh-anh-chibi-cute-004.webp',
+      'https://jbagy.me/wp-content/uploads/2025/03/Hinh-anh-anime-chibi-nam-ngau-2.jpg',
+      'https://hoanghamobile.com/tin-tuc/wp-content/uploads/2023/08/hinh-chibi-cute-de-ve-17.jpg',
     ];
 
     return Card(

@@ -3,7 +3,6 @@ import 'arcticles_detail.dart';
 import 'models/article_model.dart';
 import 'services/article_service.dart';
 import '../../core/config/responsive_text.dart';
-import '../../core/utils/text_utils.dart';
 import 'arcticles_list.dart';
 
 class ArticlesScreen extends StatefulWidget {
@@ -18,12 +17,14 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
   List<Article> filteredArticles = [];
   bool isLoading = true;
   String selectedCategory = 'Tất cả';
+  List<Tag> allTags = [];
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadArticles();
+    _loadTags();
   }
 
   @override
@@ -58,6 +59,15 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
         );
       }
     }
+  }
+
+  Future<void> _loadTags() async {
+    try {
+      final tags = await ArticleService.getAllTags();
+      setState(() {
+        allTags = tags;
+      });
+    } catch (e) {}
   }
 
   void _filterArticles(String category) {
@@ -145,8 +155,6 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                     ),
                   ),
                 ),
-
-                // Popular Articles
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
@@ -165,39 +173,20 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                         onTap: () => _filterArticles('Tất cả'),
                       ),
                       const SizedBox(width: 8),
-                      _ArticleChip(
-                        label: 'Chăm sóc da',
-                        selected: selectedCategory == 'Chăm sóc da',
-                        icon: Icons.spa,
-                        onTap: () => _filterArticles('Chăm sóc da'),
-                      ),
-                      const SizedBox(width: 8),
-                      _ArticleChip(
-                        label: 'Nghiên cứu y khoa',
-                        selected: selectedCategory == 'Nghiên cứu y khoa',
-                        icon: Icons.science,
-                        onTap: () => _filterArticles('Nghiên cứu y khoa'),
-                      ),
-                      const SizedBox(width: 8),
-                      _ArticleChip(
-                        label: 'Điều trị',
-                        selected: selectedCategory == 'Điều trị',
-                        icon: Icons.healing,
-                        onTap: () => _filterArticles('Điều trị'),
-                      ),
-                      const SizedBox(width: 8),
-                      _ArticleChip(
-                        label: 'Phòng ngừa',
-                        selected: selectedCategory == 'Phòng ngừa',
-                        icon: Icons.shield,
-                        onTap: () => _filterArticles('Phòng ngừa'),
-                      ),
+                      for (final tag in allTags) ...[
+                        _ArticleChip(
+                          label: tag.name,
+                          selected: selectedCategory == tag.name,
+                          icon: Icons.label,
+                          onTap: () => _filterArticles(tag.name),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                     ],
                   ),
                 ),
                 const SizedBox(height: 28),
 
-                // Articles List
                 if (isLoading)
                   const Center(
                     child: Padding(
@@ -240,7 +229,6 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                     ),
                   )
                 else ...[
-                  // Trending Articles
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -248,23 +236,20 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                         'Bài viết xu hướng',
                         style: ResponsiveText.sectionHeaderStyle,
                       ),
-                        TextButton(
+                      TextButton(
                         onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ArticlesListPage(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Xem tất cả',
-                        style: TextStyle(
-                          color: Colors.teal,
-                          fontSize: 13,
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ArticlesListPage(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Xem tất cả',
+                          style: TextStyle(color: Colors.teal, fontSize: 13),
                         ),
                       ),
-                    ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -296,37 +281,78 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
                         style: ResponsiveText.sectionHeaderStyle,
                       ),
                       TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ArticlesListPage(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Xem tất cả',
-                        style: TextStyle(
-                          color: Colors.teal,
-                          fontSize: 13,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ArticlesListPage(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Xem tất cả',
+                          style: TextStyle(color: Colors.teal, fontSize: 13),
                         ),
                       ),
-                    ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount:
-                        filteredArticles.length > 8
-                            ? 8
-                            : filteredArticles.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final article = filteredArticles[index];
-                      return _AnimatedRelatedArticleTile(
-                        article: article.toListMap(),
+                  Builder(
+                    builder: (context) {
+                      if (filteredArticles.isEmpty) {
+                        return SizedBox();
+                      }
+                      final mainArticle = filteredArticles.first;
+                      final mainTags = mainArticle.tags;
+                      final relatedArticles =
+                          filteredArticles
+                              .where(
+                                (article) =>
+                                    article != mainArticle &&
+                                    article.tags.any(
+                                      (tag) => mainTags.contains(tag),
+                                    ),
+                              )
+                              .toList();
+                      if (relatedArticles.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.article_outlined,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Không có bài viết liên quan',
+                                  style: TextStyle(
+                                    fontSize: ResponsiveText.h2,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount:
+                            relatedArticles.length > 8
+                                ? 8
+                                : relatedArticles.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final article = relatedArticles[index];
+                          return _AnimatedRelatedArticleTile(
+                            article: article.toListMap(),
+                          );
+                        },
                       );
                     },
                   ),
@@ -564,7 +590,6 @@ class _AnimatedRelatedArticleTileState
       onTapUp: (_) => setState(() => _scale = 1.0),
       onTapCancel: () => setState(() => _scale = 1.0),
       onTap: () async {
-        // Find the corresponding article from the filtered list
         final articlesState =
             context.findAncestorStateOfType<_ArticlesScreenState>();
         if (articlesState != null) {
@@ -649,32 +674,9 @@ class _AnimatedRelatedArticleTileState
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            widget.article['readTime']!,
-                            style: TextStyle(
-                              color: Colors.teal,
-                              fontSize: ResponsiveText.caption,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
                       ],
                     ),
                   ],
-                ),
-              ),
-              SizedBox(
-                width: 28,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 4, right: 8),
-                  child: Icon(
-                    Icons.bookmark_border,
-                    color: Colors.teal,
-                    size: 22,
-                  ),
                 ),
               ),
             ],

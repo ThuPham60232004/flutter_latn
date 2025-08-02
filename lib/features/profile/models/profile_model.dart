@@ -7,6 +7,7 @@ class ProfileModel {
   final String? phone;
   final String? password;
   final DateTime? dateOfBirth;
+  final String? avatarUrl;
 
   ProfileModel({
     required this.id,
@@ -15,6 +16,7 @@ class ProfileModel {
     this.phone,
     this.password,
     this.dateOfBirth,
+    this.avatarUrl,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class ProfileModel {
           json['dateOfBirth'] != null
               ? DateTime.parse(json['dateOfBirth'])
               : null,
+      avatarUrl: json['urlImage'],
     );
   }
 
@@ -39,6 +42,7 @@ class ProfileModel {
       'phone': phone,
       'password': password,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'urlImage': avatarUrl,
     };
   }
 
@@ -60,4 +64,8 @@ class ProfileModel {
     if (dateOfBirth == null) return 'Chưa cập nhật';
     return DateFormat('dd/MM/yyyy').format(dateOfBirth!);
   }
+
+  String get displayAvatarUrl =>
+      avatarUrl ??
+      'https://cdn-media.sforum.vn/storage/app/media/1image/anh-hoat-hinh-cute-thumb.jpg';
 }

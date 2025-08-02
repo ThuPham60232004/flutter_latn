@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'models/article_model.dart';
 import 'services/article_service.dart';
-import '../../core/config/responsive_text.dart';
 import '../../core/utils/text_utils.dart';
 import 'arcticles_list.dart';
 
@@ -69,14 +68,19 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
       final currentArticleTags = widget.article['tags'] as List<String>? ?? [];
 
       if (currentArticleTags.isNotEmpty) {
-        final tagString = currentArticleTags.first;
-
-        final articles = await ArticleService.getArticlesByTag(tagString);
+        // Fetch all articles (or use your service to fetch by multiple tags if available)
+        final articles = await ArticleService.getArticles();
 
         final filteredArticles =
             articles
-                .where((article) => article.id != widget.article['id'])
-                .take(3)
+                .where(
+                  (article) =>
+                      article.id != widget.article['id'] &&
+                      article.tags.any(
+                        (tag) => currentArticleTags.contains(tag),
+                      ),
+                )
+                .take(8) // or any number you want to display
                 .toList();
 
         setState(() {
@@ -112,7 +116,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
           SliverToBoxAdapter(
             child: Stack(
               children: [
-                // Hero image with rounded bottom corners
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(32),
@@ -136,7 +139,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
                         ),
                   ),
                 ),
-                // Overlayed app bar buttons
                 Positioned(
                   top: statusBarHeight + 16,
                   left: 16,
@@ -145,33 +147,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
                     onTap: () => Navigator.pop(context),
                   ),
                 ),
-                Positioned(
-                  top: statusBarHeight + 16,
-                  right: 72,
-                  child: _FrostedCircleButton(
-                    icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    iconColor: isBookmarked ? Colors.teal : Colors.black,
-                    onTap: () {
-                      setState(() {
-                        isBookmarked = !isBookmarked;
-                      });
-                    },
-                  ),
-                ),
-                Positioned(
-                  top: statusBarHeight + 16,
-                  right: 16,
-                  child: _FrostedCircleButton(
-                    icon: Icons.share,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() {
-                        shareCount++;
-                      });
-                    },
-                  ),
-                ),
-                // Title overlay at bottom of image
                 Positioned(
                   left: 0,
                   right: 0,
@@ -211,14 +186,12 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
               ],
             ),
           ),
-          // Author & meta row just below the image
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: _buildArticleMeta(),
             ),
           ),
-          // Main content
           SliverToBoxAdapter(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -229,7 +202,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Removed title here (now on image)
                       const SizedBox(height: 16),
                       _buildArticleContent(),
                       const SizedBox(height: 32),
@@ -253,7 +225,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Larger avatar with border/shadow
         Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
@@ -280,7 +251,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Author name
               Text(
                 TextUtils.formatAuthorName(
                   widget.article['author'] ?? 'Tác giả',
@@ -729,7 +699,6 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen>
   }
 }
 
-// Frosted glass circle button widget
 class _FrostedCircleButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -760,9 +729,7 @@ class _FrostedCircleButton extends StatelessWidget {
   }
 }
 
-// Helper function for tag truncation
 String _truncateTag(String tag) {
-  // Show at most 9 characters, add ellipsis if longer
   return tag.runes.length > 9
       ? String.fromCharCodes(tag.runes.take(9)) + '…'
       : tag;

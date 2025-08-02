@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'models/article_model.dart';
 import 'services/article_service.dart';
 import '../../core/config/responsive_text.dart';
-import '../../core/utils/text_utils.dart';
 import 'arcticles_detail.dart';
 
 class ArticlesListPage extends StatefulWidget {

@@ -2,24 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_latn/features/hospital/hospital_detail.dart';
 import 'package:flutter_application_latn/features/hospital/models/hospital_model.dart';
 import 'package:flutter_application_latn/features/hospital/services/hospital_service.dart';
-import 'package:flutter_application_latn/core/config/responsive_text.dart';
-import 'package:flutter_application_latn/core/utils/text_utils.dart';
 
-class ListHospitalPage extends StatefulWidget {
-  const ListHospitalPage({Key? key}) : super(key: key);
+class SearchHospital extends StatefulWidget {
+  const SearchHospital({Key? key}) : super(key: key);
 
   @override
-  State<ListHospitalPage> createState() => _ListHospitalPageState();
+  State<SearchHospital> createState() => _SearchHospitalState();
 }
 
-class _ListHospitalPageState extends State<ListHospitalPage> {
+class _SearchHospitalState extends State<SearchHospital> {
   List<Hospital> hospitals = [];
   List<Hospital> filteredHospitals = [];
   String searchQuery = '';
   bool isLoading = true;
   String? errorMessage;
-
-  // Filter state
   String? selectedSpecialty;
   double? minRating;
 
@@ -35,9 +31,7 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
         isLoading = true;
         errorMessage = null;
       });
-
       final hospitalsData = await HospitalService.getHospitals();
-
       setState(() {
         hospitals = hospitalsData;
         filteredHospitals = hospitalsData;
@@ -99,31 +93,9 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
                   const Text(
-                    'Bộ lọc',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Icon(Icons.medical_services, color: Colors.teal),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Chuyên khoa',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
+                    'Chuyên khoa',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   DecoratedBox(
@@ -265,60 +237,19 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Danh sách bệnh viện',
+          'Tra cứu bệnh viện',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black),
-            onPressed: _loadHospitals,
-          ),
-        ],
+        backgroundColor: Colors.teal,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       backgroundColor: const Color(0xFFF6F8FA),
       body: Column(
         children: [
-          if ((selectedSpecialty != null && selectedSpecialty!.isNotEmpty) ||
-              (minRating != null && minRating! > 0))
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Row(
-                children: [
-                  const Icon(Icons.filter_alt, color: Colors.teal, size: 18),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Lọc theo: '
-                      '${selectedSpecialty != null && selectedSpecialty!.isNotEmpty ? selectedSpecialty : 'Tất cả chuyên khoa'}'
-                      '${(minRating != null && minRating! > 0) ? ', Đánh giá ≥ ${minRating!.toStringAsFixed(1)}' : ''}',
-                      style: const TextStyle(
-                        color: Colors.teal,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed:
-                        () => _filterHospitals(
-                          searchQuery,
-                          specialty: null,
-                          minRating: null,
-                        ),
-                    child: const Text(
-                      'Xóa',
-                      style: TextStyle(color: Colors.teal),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
@@ -372,7 +303,6 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
         ),
       );
     }
-
     if (errorMessage != null) {
       return Center(
         child: Column(
@@ -407,7 +337,6 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
         ),
       );
     }
-
     if (filteredHospitals.isEmpty) {
       return Center(
         child: Column(
@@ -442,7 +371,6 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
         ),
       );
     }
-
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: filteredHospitals.length,
@@ -450,7 +378,6 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
       itemBuilder: (context, index) {
         final hospital = filteredHospitals[index];
         final hospitalData = hospital.toUIMap();
-
         return GestureDetector(
           onTap: () {
             Navigator.push(
@@ -527,7 +454,7 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
                           hospitalData['name']!,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: ResponsiveText.h2,
+                            fontSize: 16,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -538,7 +465,7 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
                           style: const TextStyle(
                             color: Colors.teal,
                             fontWeight: FontWeight.w500,
-                            fontSize: ResponsiveText.bodyMedium,
+                            fontSize: 13,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -568,7 +495,7 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
                                     style: const TextStyle(
                                       color: Color(0xFF199A8E),
                                       fontWeight: FontWeight.bold,
-                                      fontSize: ResponsiveText.rating,
+                                      fontSize: 13,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -588,7 +515,7 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
                                 hospitalData['location']!,
                                 style: const TextStyle(
                                   color: Colors.grey,
-                                  fontSize: ResponsiveText.caption,
+                                  fontSize: 12,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -611,7 +538,7 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
                                   hospital.phone,
                                   style: const TextStyle(
                                     color: Colors.grey,
-                                    fontSize: ResponsiveText.caption,
+                                    fontSize: 12,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -647,39 +574,4 @@ class _ListHospitalPageState extends State<ListHospitalPage> {
       ),
     );
   }
-}
-
-Widget _buildSectionTitle(String title, BuildContext context) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            height: 3,
-            width: 40,
-            decoration: BoxDecoration(
-              color: Colors.teal,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ],
-      ),
-      GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ListHospitalPage()),
-          );
-        },
-        child: const Text('Xem tất cả', style: TextStyle(color: Colors.teal)),
-      ),
-    ],
-  );
 }

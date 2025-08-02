@@ -4,17 +4,24 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class Result extends StatefulWidget {
+  final String? finalDiagnosis;
+  Result({this.finalDiagnosis});
+
   @override
   _ResultState createState() => _ResultState();
 }
 
 class _ResultState extends State<Result> {
   Future<List<Map<String, String>>>? futureDiagnoses;
+  Future<String>? futureDiseaseInfo;
 
   @override
   void initState() {
     super.initState();
     futureDiagnoses = fetchDiagnosisList();
+    if (widget.finalDiagnosis != null && widget.finalDiagnosis!.isNotEmpty) {
+      futureDiseaseInfo = fetchDiseaseDescription(widget.finalDiagnosis!);
+    }
   }
 
   Future<List<Map<String, String>>> fetchDiagnosisList() async {
@@ -45,7 +52,7 @@ class _ResultState extends State<Result> {
           return [];
         }
       } else {
-        print('Mã lỗi HTTP: ${response.statusCode}');
+        print('Mã lỗi HTTP:  {response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -56,7 +63,7 @@ class _ResultState extends State<Result> {
 
   Future<String> fetchDiseaseDescription(String diseaseName) async {
     final url =
-        'https://fastapi-service-748034725478.europe-west4.run.app/api/knowledge?disease_name=$diseaseName';
+        'https://fastapi-service-748034725478.europe-west4.run.app/api/knowledge?disease_name=${Uri.encodeComponent(diseaseName)}';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -83,7 +90,7 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
 
         return description;
       } else {
-        return "Lỗi server: ${response.statusCode}";
+        return "Lỗi server:  {response.statusCode}";
       }
     } catch (e) {
       return "Lỗi kết nối: $e";
@@ -106,327 +113,170 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
     bool showWarning = doPhuHop.toLowerCase() != 'cao';
     final levelColor = getColorForLevel(doPhuHop);
 
-    return Container(
-      padding: EdgeInsets.all(16),
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Color(0xFFB2DFDB).withOpacity(0.3),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 16,
-            color: Color(0xFF199A8E).withOpacity(0.08),
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            ketqua.toUpperCase(),
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF222B45),
-            ),
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Text(
-                'Độ phù hợp: ',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: levelColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  doPhuHop.toUpperCase(),
-                  style: TextStyle(
-                    color: levelColor,
-                    fontWeight: FontWeight.bold,
+    return Card(
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_hospital, color: Colors.teal, size: 28),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    ketqua.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF222B45),
+                    ),
                   ),
                 ),
-              ),
-              if (showWarning) ...[
-                SizedBox(width: 30),
-                Tooltip(
-                  message:
-                      'Kết quả chẩn đoán chỉ mang tính chất tham khảo.\nVui lòng tham khảo ý kiến bác sĩ để được tư vấn chính xác.',
-                  textStyle: TextStyle(color: Colors.white),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black87,
-                    borderRadius: BorderRadius.circular(8),
+                    color: levelColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.red,
-                        size: 15,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Cảnh báo',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    doPhuHop.toUpperCase(),
+                    style: TextStyle(
+                      color: levelColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
-            ],
-          ),
-          SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade100,
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            ),
+            if (showWarning)
+              Padding(
+                padding: const EdgeInsets.only(top: 10.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.red,
+                      size: 18,
                     ),
-                  ),
-                  child: Text(
-                    'Hủy bỏ',
-                    style: TextStyle(color: Colors.black87),
-                  ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Kết quả chẩn đoán chỉ mang tính chất tham khảo. Vui lòng tham khảo ý kiến bác sĩ để được tư vấn chính xác.',
+                        style: TextStyle(color: Colors.red, fontSize: 13),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) {
-                        return Dialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: FutureBuilder<String>(
-                            future: fetchDiseaseDescription(ketqua),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return Padding(
-                                  padding: const EdgeInsets.all(20),
-                                  child: SizedBox(
-                                    height: 100,
-                                    child: Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                final textLines =
-                                    snapshot.data?.split('\n') ??
-                                    ['Không có dữ liệu'];
+          ],
+        ),
+      ),
+    );
+  }
 
-                                return Container(
-                                  padding: EdgeInsets.all(20),
-                                  constraints: BoxConstraints(maxHeight: 600),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.medical_information_rounded,
-                                            color: Color(0xFF199A8E),
-                                            size: 24,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Thông tin bệnh học',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF222B45),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 16),
-                                      Expanded(
-                                        child: SingleChildScrollView(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children:
-                                                textLines.map((line) {
-                                                  if (line.trim().isEmpty)
-                                                    return SizedBox.shrink();
-                                                  if (line.startsWith(
-                                                    "Thuốc điều trị:",
-                                                  )) {
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            vertical: 8.0,
-                                                          ),
-                                                      child: Text(
-                                                        "💊 ${line.trim()}",
-                                                        style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 15,
-                                                          color: Color(
-                                                            0xFF222B45,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                  if (line.startsWith("-")) {
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                            left: 12.0,
-                                                            bottom: 4,
-                                                          ),
-                                                      child: Text(
-                                                        line,
-                                                        style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: Color(
-                                                            0xFF6B7280,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                  if (line.contains(':')) {
-                                                    final parts = line.split(
-                                                      ':',
-                                                    );
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            vertical: 6.0,
-                                                          ),
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          RichText(
-                                                            text: TextSpan(
-                                                              text:
-                                                                  "${parts[0]}: ",
-                                                              style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 15,
-                                                                color: Color(
-                                                                  0xFF222B45,
-                                                                ),
-                                                              ),
-                                                              children: [
-                                                                TextSpan(
-                                                                  text:
-                                                                      parts
-                                                                          .sublist(
-                                                                            1,
-                                                                          )
-                                                                          .join(
-                                                                            ':',
-                                                                          )
-                                                                          .trim(),
-                                                                  style: TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .normal,
-                                                                    fontSize:
-                                                                        14,
-                                                                    color: Color(
-                                                                      0xFF6B7280,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                          Divider(
-                                                            height: 16,
-                                                            color: Color(
-                                                              0xFFB2DFDB,
-                                                            ).withOpacity(0.3),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  }
-                                                  return Text(line);
-                                                }).toList(),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 20),
-                                      ElevatedButton.icon(
-                                        onPressed:
-                                            () => Navigator.of(context).pop(),
-                                        icon: Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                        ),
-                                        label: Text(
-                                          'Đóng',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color(0xFF199A8E),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF179B8E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Xem thông tin',
-                    style: TextStyle(color: Colors.white),
+  Widget buildDiseaseInfoSection(AsyncSnapshot<String> snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (snapshot.hasError || !snapshot.hasData) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24.0),
+        child: Text(
+          'Không thể lấy thông tin bệnh học.',
+          style: TextStyle(color: Colors.red),
+        ),
+      );
+    }
+    final lines = snapshot.data!.split('\n');
+    return Card(
+      elevation: 6,
+      margin: EdgeInsets.only(bottom: 18),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.medical_information_rounded,
+                  color: Colors.teal,
+                  size: 28,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Thông tin bệnh học',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.teal[800],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+            SizedBox(height: 16),
+            ...lines.map((line) {
+              if (line.trim().isEmpty) return SizedBox.shrink();
+              if (line.startsWith('Thuốc điều trị:')) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    "💊 ${line.trim()}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.teal[900],
+                    ),
+                  ),
+                );
+              }
+              if (line.startsWith("-")) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 12.0, bottom: 4),
+                  child: Text(
+                    line,
+                    style: TextStyle(fontSize: 14, color: Colors.black87),
+                  ),
+                );
+              }
+              if (line.contains(':')) {
+                final parts = line.split(':');
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: RichText(
+                    text: TextSpan(
+                      text: "${parts[0]}: ",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.teal[700],
+                      ),
+                      children: [
+                        TextSpan(
+                          text: parts.sublist(1).join(':').trim(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.normal,
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return Text(line);
+            }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -434,47 +284,58 @@ ${(info['Các loại thuốc'] as List).map((thuoc) {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE0F7FA),
+      backgroundColor: Color(0xFFF6FCFB),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 1,
-        leading: BackButton(color: Colors.black),
+        elevation: 2,
+        leading: BackButton(color: Colors.teal[800]),
         title: Text(
           "Kết quả chẩn đoán",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.teal[900],
+            fontWeight: FontWeight.w700,
+            fontSize: 22,
+          ),
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: FutureBuilder<List<Map<String, String>>>(
-            future: futureDiagnoses,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
-
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Center(
-                  child: Text(
-                    "Không có dữ liệu chẩn đoán.",
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (futureDiseaseInfo != null)
+                  FutureBuilder<String>(
+                    future: futureDiseaseInfo,
+                    builder:
+                        (context, snapshot) =>
+                            buildDiseaseInfoSection(snapshot),
                   ),
-                );
-              }
-
-              final diagnoses = snapshot.data!;
-              return ListView.builder(
-                itemCount: diagnoses.length,
-                itemBuilder: (context, index) {
-                  final item = diagnoses[index];
-                  return buildDiagnosisCard(
-                    item['ketqua']!,
-                    item['do_phu_hop']!,
-                  );
-                },
-              );
-            },
+                SizedBox(height: 24),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.arrow_back, color: Colors.white),
+                    label: Text(
+                      'Quay lại',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal[700],
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -14,7 +14,7 @@ class HomeHeader extends StatefulWidget {
 class _HomeHeaderState extends State<HomeHeader> {
   String userName = '';
   String avatarUrl =
-      'https://randomuser.me/api/portraits/men/32.jpg'; // fallback avatar
+      'https://cdn-media.sforum.vn/storage/app/media/1image/anh-hoat-hinh-cute-thumb.jpg'; 
 
   @override
   void initState() {

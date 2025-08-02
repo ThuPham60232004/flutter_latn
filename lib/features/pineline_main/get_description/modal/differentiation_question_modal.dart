@@ -21,6 +21,7 @@ class _Differentiation_Question_ModalState
   List<String> questions = [];
   bool isLoading = true;
   Map<int, TextEditingController> controllers = {};
+  bool _isSubmitting = false;
 
   late AnimationController _controller;
   late Animation<double> _fade;
@@ -54,7 +55,7 @@ class _Differentiation_Question_ModalState
       final userId = prefs.getString('userId') ?? '';
 
       final url = Uri.parse(
-        'https://fastapi-service-748034725478.europe-west4.run.app/api/differentiation_questions?key=$userId',
+        'https://fastapi-service-748034725478.europe-west4.run.app/api/diagnosis/$userId/questions',
       );
 
       final response = await http.get(url);
@@ -62,20 +63,25 @@ class _Differentiation_Question_ModalState
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        if (data is List && data.isNotEmpty && data[0]['questions'] is List) {
-          setState(() {
-            questions =
-                List<String>.from(
-                  data[0]['questions'],
-                ).where((q) => q.trim() != ".").toList();
-
-            for (int i = 0; i < questions.length; i++) {
-              controllers[i] = TextEditingController();
-            }
-            _fieldVisible = List.generate(questions.length, (_) => false);
-            _staggerFields();
-            isLoading = false;
-          });
+        if (data is List && data.isNotEmpty) {
+          final item = data[0];
+          final qList = item['questions'] ?? item['question'];
+          if (qList is List) {
+            setState(() {
+              questions =
+                  List<String>.from(
+                    qList,
+                  ).where((q) => q.trim() != ".").toList();
+              for (int i = 0; i < questions.length; i++) {
+                controllers[i] = TextEditingController();
+              }
+              _fieldVisible = List.generate(questions.length, (_) => false);
+              _staggerFields();
+              isLoading = false;
+            });
+          } else {
+            throw Exception("Dữ liệu không đúng định dạng.");
+          }
         } else {
           throw Exception("Dữ liệu không đúng định dạng.");
         }
@@ -99,41 +105,99 @@ class _Differentiation_Question_ModalState
   }
 
   Future<void> submitAnswers() async {
+    if (_isSubmitting) return;
+    setState(() {
+      _isSubmitting = true;
+    });
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('userId') ?? '';
 
-    List<String> userDescriptions =
-        controllers.entries
-            .map((entry) {
-              return entry.value.text.trim();
-            })
-            .where((desc) => desc.isNotEmpty)
-            .toList();
+    if (userId.isEmpty) {
+      setState(() {
+        _isSubmitting = false;
+      });
+      _showErrorDialog('Không tìm thấy người dùng. Vui lòng đăng nhập lại.');
+      return;
+    }
 
-    final payload = {'user_description': userDescriptions};
+    // Gộp Q&A thành 1 string (JSON string đơn giản)
+    String qaString = '';
+    for (int i = 0; i < questions.length; i++) {
+      final q = questions[i];
+      final a = controllers[i]?.text.trim() ?? '';
+      if (a.isNotEmpty) {
+        qaString += 'Câu hỏi ${i + 1}: $q\nTrả lời: $a\n\n';
+      }
+    }
+    print(qaString);
 
+    if (qaString.trim().isEmpty) {
+      setState(() {
+        _isSubmitting = false;
+      });
+      _showErrorDialog('Bạn chưa nhập câu trả lời nào.');
+      return;
+    }
+
+    final encodedAnswer = Uri.encodeComponent(qaString);
     final url = Uri.parse(
-      'https://fastapi-service-748034725478.europe-west4.run.app/api/submit-differentiation-questions?key=$userId',
+      'https://fastapi-service-748034725478.europe-west4.run.app/api/diagnosis/$userId/submit?user_answers=$encodedAnswer',
     );
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
-      print(response);
+      final response = await http.post(url);
+
       if (response.statusCode == 200) {
         print("Gửi thành công!");
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => Result()));
+        // Parse response body for final_diagnosis
+        String? finalDiagnosis;
+        try {
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          finalDiagnosis = responseData['final_diagnosis']?.toString();
+        } catch (e) {
+          finalDiagnosis = null;
+        }
+        setState(() {
+          _isSubmitting = false;
+        });
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => Result(finalDiagnosis: finalDiagnosis),
+          ),
+        );
       } else {
-        print("Lỗi khi gửi dữ liệu: \\${response.body}");
+        setState(() {
+          _isSubmitting = false;
+        });
+        print(
+          "Lỗi khi gửi dữ liệu: \\${response.statusCode} - \\${response.body}",
+        );
+        _showErrorDialog('Gửi thất bại: \\${response.statusCode}');
       }
     } catch (e) {
+      setState(() {
+        _isSubmitting = false;
+      });
       print("Lỗi kết nối: $e");
+      _showErrorDialog('Lỗi kết nối đến server.');
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Lỗi'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Đóng'),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
@@ -232,38 +296,64 @@ class _Differentiation_Question_ModalState
                             ),
                           ),
                           const SizedBox(height: 24),
-                          GestureDetector(
-                            onTapDown: (_) => _controller.reverse(),
-                            onTapUp: (_) => _controller.forward(),
-                            onTapCancel: () => _controller.forward(),
-                            onTap: submitAnswers,
-                            child: ScaleTransition(
-                              scale: _scaleButton,
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF199A8E),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 18,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    elevation: 6,
-                                    shadowColor: const Color(
-                                      0xFF199A8E,
-                                    ).withOpacity(0.25),
-                                    textStyle: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                          MouseRegion(
+                            cursor:
+                                _isSubmitting
+                                    ? SystemMouseCursors.forbidden
+                                    : SystemMouseCursors.click,
+                            child: AnimatedContainer(
+                              duration: Duration(milliseconds: 150),
+                              curve: Curves.easeInOut,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        _isSubmitting
+                                            ? Colors.grey.withOpacity(0.1)
+                                            : Colors.teal.withOpacity(0.18),
+                                    blurRadius: 12,
+                                    offset: Offset(0, 4),
                                   ),
-                                  icon: const Icon(Icons.send_rounded),
-                                  label: const Text("Tiếp theo"),
-                                  onPressed: null, // handled by GestureDetector
+                                ],
+                              ),
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      _isSubmitting
+                                          ? Colors.grey[400]
+                                          : const Color(0xFF199A8E),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  elevation: 6,
+                                  shadowColor: const Color(
+                                    0xFF199A8E,
+                                  ).withOpacity(0.25),
+                                  textStyle: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
+                                icon:
+                                    _isSubmitting
+                                        ? SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        )
+                                        : const Icon(Icons.send_rounded),
+                                label: Text(
+                                  _isSubmitting ? "Đang gửi..." : "Tiếp theo",
+                                ),
+                                onPressed: _isSubmitting ? null : submitAnswers,
                               ),
                             ),
                           ),

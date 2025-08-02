@@ -13,8 +13,9 @@ import 'package:flutter_application_latn/features/hospital/hospital_detail.dart'
 import 'package:flutter_application_latn/features/hospital/list_hospital.dart';
 import 'package:flutter_application_latn/features/hospital/models/hospital_model.dart';
 import 'package:flutter_application_latn/features/hospital/services/hospital_service.dart';
-import 'package:flutter_application_latn/features/pharmacies/pharmacies_screen.dart';
 import 'package:flutter_application_latn/core/utils/text_utils.dart';
+import 'package:flutter_application_latn/features/search/search.dart';
+import 'package:flutter_application_latn/features/search/search_hospital.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -97,8 +98,8 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
   }
 
   static const _serviceItems = [
-    {'icon': Icons.local_hospital, 'label': 'Bác sĩ'},
-    {'icon': Icons.local_pharmacy, 'label': 'Nhà thuốc'},
+    {'icon': Icons.local_hospital, 'label': 'Chẩn đoán'},
+    {'icon': Icons.local_pharmacy, 'label': 'Tra cứu bệnh viện'},
     {'icon': Icons.local_hospital_outlined, 'label': 'Bệnh viện'},
     {'icon': Icons.search, 'label': 'Tra cứu bệnh'},
   ];
@@ -217,8 +218,8 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
 
   Widget _buildTopHospitals() {
     final screenHeight = MediaQuery.of(context).size.height;
-    final hospitalCardHeight =
-        screenHeight * 0.23; // slightly reduced for elegance
+    final screenWidth = MediaQuery.of(context).size.width;
+    final hospitalCardHeight = screenHeight * 0.23;
 
     if (isLoadingHospitals) {
       return SizedBox(
@@ -264,154 +265,154 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: topHospitals.length,
-        separatorBuilder:
-            (_, __) =>
-                SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+        separatorBuilder: (_, __) => SizedBox(width: screenWidth * 0.04),
         itemBuilder: (_, index) {
           final hospital = topHospitals[index];
           final hospitalData = hospital.toUIMap();
-          return Stack(
-            children: [
-              Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => HospitalScreen(hospital: hospitalData),
                 ),
-                color: Colors.white,
-                margin: EdgeInsets.zero,
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.46,
-                  padding: EdgeInsets.all(10), // reduced padding
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) =>
-                                        HospitalScreen(hospital: hospitalData),
-                              ),
-                            );
-                          },
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child:
-                                hospitalData['image'] != null &&
-                                        hospitalData['image']!.isNotEmpty
-                                    ? Image.network(
-                                      hospitalData['image']!,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                    )
-                                    : Container(
-                                      width: double.infinity,
-                                      color: Color(
-                                        0xFF19C3AE,
-                                      ).withOpacity(0.08),
-                                      child: Icon(
-                                        Icons.local_hospital,
-                                        color: Color(0xFF19C3AE),
-                                        size: 36,
-                                      ),
-                                    ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        hospitalData['name'] ?? '',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15, // reduced font size
-                          color: Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.medical_services,
-                            color: Color(0xFF19C3AE),
-                            size: 15,
-                          ),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              hospitalData['specialty'] ?? '',
-                              style: TextStyle(
-                                color: Colors.teal[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 15),
-                          const SizedBox(width: 3),
-                          Text(
-                            hospitalData['rating'] ?? '4.5',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber[800],
-                            ),
-                          ),
-                          const Spacer(),
-                          const SizedBox(width: 4),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              backgroundColor: Color(
-                                0xFF19C3AE,
-                              ).withOpacity(0.08),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              minimumSize: Size(0, 0),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => HospitalScreen(
-                                        hospital: hospitalData,
-                                      ),
+              );
+            },
+            child: Container(
+              width: screenWidth * 0.46,
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Color(0xFFF8FAFA),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Color(0xFFE0E3E7), width: 1.2),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child:
+                          hospitalData['image'] != null &&
+                                  hospitalData['image']!.isNotEmpty
+                              ? Image.network(
+                                hospitalData['image']!,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                              : Container(
+                                width: double.infinity,
+                                color: Color(0xFF19C3AE).withOpacity(0.08),
+                                child: Icon(
+                                  Icons.local_hospital,
+                                  color: Color(0xFF19C3AE),
+                                  size: 36,
                                 ),
-                              );
-                            },
-                            child: Text(
-                              'Chi tiết',
-                              style: TextStyle(
-                                color: Color(0xFF19C3AE),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
                               ),
-                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    hospitalData['name'] ?? '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.medical_services,
+                        color: Color(0xFF19C3AE),
+                        size: 15,
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          hospitalData['specialty'] ?? '',
+                          style: TextStyle(
+                            color: Colors.teal[700],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: Colors.amber[800],
+                              size: 15,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              hospitalData['rating'] ?? '4.5',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber[800],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                          backgroundColor: Color(0xFF19C3AE),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          minimumSize: Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => HospitalScreen(hospital: hospitalData),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Chi tiết',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),
@@ -649,18 +650,22 @@ class _AnimatedIconMenuState extends State<_AnimatedIconMenu> {
               MaterialPageRoute(builder: (_) => const ListHospitalPage()),
             );
             break;
-          case 'Nhà thuốc':
+          case 'Tra cứu bệnh viện':
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const PharmaciesScreen()),
+              MaterialPageRoute(builder: (_) => const SearchHospital()),
             );
             break;
           case 'Tra cứu bệnh':
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Tính năng tra cứu bệnh đang phát triển'),
-                duration: Duration(seconds: 2),
-              ),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DiseaseSearchScreen()),
+            );
+            break;
+          case 'Chẩn đoán':
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChooseImageScreen()),
             );
             break;
           default:
@@ -679,15 +684,15 @@ class _AnimatedIconMenuState extends State<_AnimatedIconMenu> {
           mainAxisSize: MainAxisSize.min,
           children: [
             CircleAvatar(
-              radius: screenWidth * 0.06, // Responsive radius
+              radius: screenWidth * 0.06,
               backgroundColor: Colors.teal.withOpacity(0.1),
               child: Icon(
                 widget.icon,
                 color: Colors.teal,
-                size: screenWidth * 0.05, // Responsive icon size
+                size: screenWidth * 0.05,
               ),
             ),
-            SizedBox(height: screenHeight * 0.005), // Responsive spacing
+            SizedBox(height: screenHeight * 0.005),
             Text(
               widget.label,
               style: TextStyle(
@@ -720,8 +725,8 @@ class UserInfo {
       name: prefs.getString('name') ?? 'Người dùng',
       email: prefs.getString('email') ?? 'user@example.com',
       avatar:
-          prefs.getString('avatar') ??
-          'https://randomuser.me/api/portraits/men/32.jpg',
+          prefs.getString('urlImage') ??
+          'https://cdn-media.sforum.vn/storage/app/media/1image/anh-hoat-hinh-cute-thumb.jpg',
     );
   }
 
@@ -744,7 +749,7 @@ class BeautifulDrawer extends StatelessWidget {
   static final _drawerItems = [
     {
       'icon': Icons.image,
-      'label': 'Chọn ảnh',
+      'label': 'Chẩn đoán',
       'builder': (BuildContext context) => const ChooseImageScreen(),
     },
     {
@@ -785,29 +790,39 @@ class BeautifulDrawer extends StatelessWidget {
             child: SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  vertical: screenHeight * 0.04, // Responsive padding
-                  horizontal: screenWidth * 0.05, // Responsive padding
+                  vertical: screenHeight * 0.04,
+                  horizontal: screenWidth * 0.05,
                 ),
                 child: FutureBuilder<UserInfo>(
                   future: UserInfo.fromPrefs(),
                   builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    }
                     final user =
                         snapshot.data ??
                         const UserInfo(
                           name: 'Người dùng',
                           email: 'user@example.com',
-                          avatar: '',
+                          avatar:
+                              'https://cdn-media.sforum.vn/storage/app/media/1image/anh-hoat-hinh-cute-thumb.jpg',
                         );
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.account_circle_rounded,
-                              color: Colors.white,
-                              size: screenWidth * 0.1, // Responsive icon size
-                            ),
+                            user.avatar.isNotEmpty
+                                ? CircleAvatar(
+                                  radius: screenWidth * 0.05,
+                                  backgroundImage: NetworkImage(user.avatar),
+                                  backgroundColor: Colors.white,
+                                )
+                                : Icon(
+                                  Icons.account_circle_rounded,
+                                  color: Colors.white,
+                                  size: screenWidth * 0.1,
+                                ),
                             SizedBox(
                               width: screenWidth * 0.03,
                             ), // Responsive spacing
@@ -864,12 +879,9 @@ class BeautifulDrawer extends StatelessWidget {
                               Icon(
                                 Icons.favorite,
                                 color: Colors.white,
-                                size:
-                                    screenWidth * 0.055, // Responsive icon size
+                                size: screenWidth * 0.055,
                               ),
-                              SizedBox(
-                                width: screenWidth * 0.02,
-                              ), // Responsive spacing
+                              SizedBox(width: screenWidth * 0.02),
                               Text(
                                 "Chào mừng bạn trở lại!",
                                 style: TextStyle(

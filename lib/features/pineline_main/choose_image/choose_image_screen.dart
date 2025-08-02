@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_application_latn/features/pineline_main/get_description/screen/user_description.dart';
+import 'package:flutter_application_latn/features/pineline_main/get_description/screen/differentiation_question.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
@@ -191,7 +191,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
     }
 
     final uri = Uri.parse(
-      'https://fastapi-service-748034725478.europe-west4.run.app/api/start-diagnosis',
+      'https://fastapi-service-748034725478.europe-west4.run.app/api/diagnosis/start?user_id=$userId',
     );
 
     try {
@@ -216,7 +216,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
 
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => User_Description()),
+          MaterialPageRoute(builder: (context) => Differentiation_Question()),
         );
       } else {
         print('Upload thất bại. Mã lỗi: ${response.statusCode}');

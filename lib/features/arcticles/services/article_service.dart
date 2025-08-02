@@ -2,6 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/article_model.dart';
 
+class Tag {
+  final String id;
+  final String name;
+  Tag({required this.id, required this.name});
+  factory Tag.fromJson(Map<String, dynamic> json) =>
+      Tag(id: json['_id'] ?? '', name: json['name'] ?? '');
+}
+
 class ArticleService {
   static const String baseUrl =
       'https://fastapi-service-748034725478.europe-west4.run.app/api';
@@ -15,7 +23,16 @@ class ArticleService {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.map((json) => Article.fromJson(json)).toList();
+        final List<Article> articles = [];
+        for (final json in jsonData) {
+          final tagIds = json['tags'] ?? [];
+          final tagNames = await getTagNames(
+            tagIds is List ? tagIds : [tagIds],
+          );
+          final article = Article.fromJson({...json, 'tags': tagNames});
+          articles.add(article);
+        }
+        return articles;
       } else {
         throw Exception('Failed to load articles: ${response.statusCode}');
       }
@@ -33,7 +50,9 @@ class ArticleService {
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        return Article.fromJson(jsonData);
+        final tagIds = jsonData['tags'] ?? [];
+        final tagNames = await getTagNames(tagIds is List ? tagIds : [tagIds]);
+        return Article.fromJson({...jsonData, 'tags': tagNames});
       } else if (response.statusCode == 404) {
         return null;
       } else {
@@ -89,12 +108,64 @@ class ArticleService {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.map((json) => Article.fromJson(json)).toList();
+        final List<Article> articles = [];
+        for (final json in jsonData) {
+          final tagIds = json['tags'] ?? [];
+          final tagNames = await getTagNames(
+            tagIds is List ? tagIds : [tagIds],
+          );
+          final article = Article.fromJson({...json, 'tags': tagNames});
+          articles.add(article);
+        }
+        return articles;
       } else {
         return [];
       }
     } catch (e) {
       return [];
     }
+  }
+
+  static Future<List<Tag>> getAllTags() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/tags'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonData = json.decode(response.body);
+      return jsonData.map((json) => Tag.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load tags: \\${response.statusCode}');
+    }
+  }
+
+  // Fetch tag name by ID
+  static final Map<String, String> _tagNameCache = {};
+
+  static Future<String> getTagNameById(String tagId) async {
+    if (_tagNameCache.containsKey(tagId)) {
+      return _tagNameCache[tagId]!;
+    }
+    final response = await http.get(
+      Uri.parse('$baseUrl/tag/$tagId'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final name = jsonData['name'] ?? tagId;
+      _tagNameCache[tagId] = name;
+      return name;
+    } else {
+      return tagId; // fallback to ID if not found
+    }
+  }
+
+  // Helper to map a list of tag IDs to names
+  static Future<List<String>> getTagNames(List<dynamic> tagIds) async {
+    final List<String> names = [];
+    for (final tagId in tagIds) {
+      names.add(await getTagNameById(tagId.toString()));
+    }
+    return names;
   }
 }
