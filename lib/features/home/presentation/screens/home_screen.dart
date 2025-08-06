@@ -16,6 +16,7 @@ import 'package:flutter_application_latn/features/hospital/services/hospital_ser
 import 'package:flutter_application_latn/core/utils/text_utils.dart';
 import 'package:flutter_application_latn/features/search/search.dart';
 import 'package:flutter_application_latn/features/search/search_hospital.dart';
+import 'package:flutter_application_latn/features/arcticles/arcticles_list.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -99,7 +100,7 @@ class _HomeScreenBodyState extends State<_HomeScreenBody> {
 
   static const _serviceItems = [
     {'icon': Icons.local_hospital, 'label': 'Chẩn đoán'},
-    {'icon': Icons.local_pharmacy, 'label': 'Tra cứu bệnh viện'},
+    {'icon': Icons.local_pharmacy, 'label': 'Bài báo'},
     {'icon': Icons.local_hospital_outlined, 'label': 'Bệnh viện'},
     {'icon': Icons.search, 'label': 'Tra cứu bệnh'},
   ];
@@ -644,10 +645,10 @@ class _AnimatedIconMenuState extends State<_AnimatedIconMenu> {
       onTapCancel: () => setState(() => _scale = 1.0),
       onTap: () {
         switch (widget.label) {
-          case 'Bệnh viện':
+          case 'Bài báo':
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const ListHospitalPage()),
+              MaterialPageRoute(builder: (_) => const ArticlesListPage()),
             );
             break;
           case 'Tra cứu bệnh viện':
@@ -922,8 +923,8 @@ class BeautifulDrawer extends StatelessWidget {
           const Spacer(),
           Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.04, // Responsive padding
-              vertical: screenHeight * 0.015, // Responsive padding
+              horizontal: screenWidth * 0.04, 
+              vertical: screenHeight * 0.015,
             ),
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
@@ -932,22 +933,22 @@ class BeautifulDrawer extends StatelessWidget {
                 minimumSize: Size(
                   double.infinity,
                   screenHeight * 0.06,
-                ), // Responsive height
+                ), 
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(
                     screenWidth * 0.04,
-                  ), // Responsive radius
+                  ), 
                 ),
                 elevation: 0,
               ),
               icon: Icon(
                 Icons.logout,
-                size: screenWidth * 0.05, // Responsive icon size
+                size: screenWidth * 0.05, 
               ),
               label: Text(
                 'Đăng xuất',
                 style: TextStyle(
-                  fontSize: screenWidth * 0.04, // Responsive font size
+                  fontSize: screenWidth * 0.04, 
                 ),
               ),
               onPressed: () {

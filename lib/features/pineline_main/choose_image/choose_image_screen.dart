@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_latn/features/pineline_main/get_description/screen/differentiation_question.dart';
+import 'package:flutter_application_latn/core/utils/exceptions.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
@@ -29,6 +30,8 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
   late Animation<double> _tutorialFadeAnimation;
   late Animation<Offset> _tutorialSlideAnimation;
   late AnimationController _scanAnimationController;
+
+  String? _imageError;
 
   final List<TutorialStep> _tutorialSteps = [
     TutorialStep(
@@ -103,41 +106,122 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
   }
 
   Future<String?> _getUserId() async {
-  final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     final id = prefs.getString('userId');
-    print('Lấy userId từ SharedPreferences: $id');
     return id;
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: source, imageQuality: 85);
-    if (pickedFile == null) return;
+  String? _validateImage(File image) {
+    final fileSize = image.lengthSync();
+    final maxSize = 5 * 1024 * 1024;
 
-    final croppedFile = await ImageCropper().cropImage(
-      sourcePath: pickedFile.path,
-      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-      compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 90,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Chỉnh sửa ảnh',
-          toolbarColor: Colors.teal,
-          toolbarWidgetColor: Colors.white,
-          hideBottomControls: false,
-          lockAspectRatio: false,
-        ),
-        IOSUiSettings(title: 'Chỉnh sửa ảnh', aspectRatioLockEnabled: false),
-      ],
+    if (fileSize > maxSize) {
+      return 'Kích thước ảnh không được vượt quá 5MB';
+    }
+
+    final extension = path.extension(image.path).toLowerCase();
+    final allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+    if (!allowedExtensions.contains(extension)) {
+      return 'Chỉ hỗ trợ định dạng JPG, JPEG, PNG';
+    }
+
+    final imageSize = image.lengthSync();
+    if (imageSize == 0) {
+      return 'Ảnh không hợp lệ hoặc bị hỏng';
+    }
+
+    return null;
+  }
+
+  Future<bool> _checkNetworkConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
     );
+  }
 
-    if (croppedFile != null) {
-      setState(() {
-        _selectedImage = File(croppedFile.path);
-      });
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
 
-      String extension = path.extension(croppedFile.path).toLowerCase();
-      print('Đuôi ảnh sau crop: $extension');
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+
+      if (pickedFile == null) return;
+
+      final file = File(pickedFile.path);
+      final validationError = _validateImage(file);
+
+      if (validationError != null) {
+        setState(() => _imageError = validationError);
+        _showErrorMessage(validationError);
+        return;
+      }
+
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: pickedFile.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 90,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Chỉnh sửa ảnh',
+            toolbarColor: Colors.teal,
+            toolbarWidgetColor: Colors.white,
+            hideBottomControls: false,
+            lockAspectRatio: false,
+          ),
+          IOSUiSettings(title: 'Chỉnh sửa ảnh', aspectRatioLockEnabled: false),
+        ],
+      );
+
+      if (croppedFile != null) {
+        final croppedFileObj = File(croppedFile.path);
+        final croppedValidationError = _validateImage(croppedFileObj);
+
+        if (croppedValidationError != null) {
+          setState(() => _imageError = croppedValidationError);
+          _showErrorMessage(croppedValidationError);
+          return;
+        }
+
+        setState(() {
+          _selectedImage = croppedFileObj;
+          _imageError = null;
+        });
+      }
+    } catch (e) {
+      _showErrorMessage('Có lỗi xảy ra khi chọn ảnh: $e');
     }
   }
 
@@ -173,31 +257,50 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
   }
 
   Future<void> _uploadImage() async {
-    if (_selectedImage == null) return;
+    if (_selectedImage == null) {
+      _showErrorMessage('Vui lòng chọn ảnh trước khi tiếp tục');
+      return;
+    }
+
+    final validationError = _validateImage(_selectedImage!);
+    if (validationError != null) {
+      setState(() => _imageError = validationError);
+      _showErrorMessage(validationError);
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
-    final userId = await _getUserId();
-    print(userId);
-    if (userId == null) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showErrorDialog(
-        'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.',
-      );
-      return;
-    }
-
-    final uri = Uri.parse(
-      'https://fastapi-service-748034725478.europe-west4.run.app/api/diagnosis/start?user_id=$userId',
-    );
-
     try {
-      final request = http.MultipartRequest('POST', uri);
+      final hasConnection = await _checkNetworkConnectivity();
+      if (!hasConnection) {
+        if (mounted) {
+          _showErrorMessage(
+            'Không có kết nối internet. Vui lòng kiểm tra lại.',
+          );
+        }
+        return;
+      }
 
+      final userId = await _getUserId();
+      if (userId == null) {
+        if (mounted) {
+          _showErrorMessage(
+            'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.',
+          );
+        }
+        return;
+      }
+
+      final uri = Uri.parse(
+        'https://fastapi-service-748034725478.europe-west4.run.app/api/diagnosis/start?user_id=$userId',
+      );
+
+      final request = http.MultipartRequest('POST', uri);
       request.fields['user_id'] = userId;
+
       final imageStream = http.ByteStream(_selectedImage!.openRead());
       final imageLength = await _selectedImage!.length();
 
@@ -209,44 +312,99 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
       );
 
       request.files.add(multipartFile);
-      final response = await request.send();
-      if (response.statusCode == 200) {
-        final respStr = await response.stream.bytesToString();
-        print('Phản hồi server: $respStr');
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => Differentiation_Question()),
-        );
+      final response = await request.send().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          throw TimeoutException('Yêu cầu upload ảnh đã hết thời gian chờ');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          _showSuccessMessage('Upload ảnh thành công!');
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const DifferentiationQuestion(),
+            ),
+          );
+        }
+      } else if (response.statusCode == 400) {
+        try {
+          final responseBody = jsonDecode(
+            await response.stream.bytesToString(),
+          );
+          final error =
+              responseBody['detail']?.toString() ?? 'Dữ liệu không hợp lệ';
+          if (mounted) {
+            _showErrorMessage(error);
+          }
+        } catch (e) {
+          if (mounted) {
+            _showErrorMessage('Dữ liệu không hợp lệ');
+          }
+        }
+      } else if (response.statusCode == 401) {
+        if (mounted) {
+          _showErrorMessage(
+            'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+          );
+        }
+      } else if (response.statusCode == 413) {
+        if (mounted) {
+          _showErrorMessage(
+            'Kích thước ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn.',
+          );
+        }
+      } else if (response.statusCode == 429) {
+        if (mounted) {
+          _showErrorMessage('Quá nhiều yêu cầu. Vui lòng thử lại sau.');
+        }
+      } else if (response.statusCode >= 500) {
+        if (mounted) {
+          _showErrorMessage('Lỗi máy chủ. Vui lòng thử lại sau.');
+        }
       } else {
-        print('Upload thất bại. Mã lỗi: ${response.statusCode}');
-        _showErrorDialog('Gửi ảnh thất bại. Mã lỗi: ${response.statusCode}');
+        if (mounted) {
+          _showErrorMessage(
+            'Upload ảnh thất bại (Mã lỗi: ${response.statusCode})',
+          );
+        }
+      }
+    } on SocketException catch (_) {
+      if (mounted) {
+        _showErrorMessage(
+          'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet.',
+        );
+      }
+    } on TimeoutException catch (e) {
+      if (mounted) {
+        _showErrorMessage(
+          e.message.isNotEmpty
+              ? e.message
+              : 'Yêu cầu upload ảnh đã hết thời gian chờ',
+        );
+      }
+    } on FormatException catch (_) {
+      if (mounted) {
+        _showErrorMessage('Dữ liệu phản hồi không đúng định dạng');
+      }
+    } on HttpException catch (e) {
+      if (mounted) {
+        _showErrorMessage('Lỗi HTTP: ${e.message}');
       }
     } catch (e) {
-      print('Lỗi upload: $e');
-      _showErrorDialog('Có lỗi xảy ra khi gửi ảnh.');
+      if (mounted) {
+        _showErrorMessage('Lỗi không xác định: $e');
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('Lỗi'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Đóng'),
-              ),
-            ],
-          ),
-    );
   }
 
   void _nextTutorialStep() {
@@ -283,9 +441,9 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF199A8E).withOpacity(0.1),
+                  const Color(0xFF199A8E).withValues(alpha: 0.1),
                   Colors.white,
-                  const Color(0xFF199A8E).withOpacity(0.05),
+                  const Color(0xFF199A8E).withValues(alpha: 0.05),
                 ],
               ),
             ),
@@ -308,6 +466,47 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                                 _buildHeader(theme),
                                 const SizedBox(height: 24),
                                 _buildImageSelectionCard(theme),
+                                if (_imageError != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.red.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red[700],
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              _imageError!,
+                                              style: TextStyle(
+                                                color: Colors.red[700],
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 18),
                                 if (_selectedImage == null)
                                   _buildGuidelinesCard(theme),
@@ -338,7 +537,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF199A8E).withOpacity(0.1),
+            color: const Color(0xFF199A8E).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -366,7 +565,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
               (bounds) => LinearGradient(
                 colors: [
                   const Color(0xFF199A8E),
-                  const Color(0xFF199A8E).withOpacity(0.8),
+                  const Color(0xFF199A8E).withValues(alpha: 0.8),
                 ],
               ).createShader(bounds),
           child: Text(
@@ -396,7 +595,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
       tag: 'image_selection',
       child: Card(
         elevation: 8,
-        shadowColor: const Color(0xFF199A8E).withOpacity(0.3),
+        shadowColor: const Color(0xFF199A8E).withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Container(
           decoration: BoxDecoration(
@@ -404,7 +603,10 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white, const Color(0xFF199A8E).withOpacity(0.05)],
+              colors: [
+                Colors.white,
+                const Color(0xFF199A8E).withValues(alpha: 0.05),
+              ],
             ),
           ),
           child: Padding(
@@ -431,12 +633,12 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFF199A8E).withOpacity(0.3),
+                color: const Color(0xFF199A8E).withValues(alpha: 0.3),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF199A8E).withOpacity(0.1),
+                  color: const Color(0xFF199A8E).withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -444,7 +646,6 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
             ),
             child: Stack(
               children: [
-                // Decorative elements
                 Positioned(
                   top: 20,
                   left: 20,
@@ -452,7 +653,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF199A8E).withOpacity(0.1),
+                      color: const Color(0xFF199A8E).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -469,7 +670,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF199A8E).withOpacity(0.1),
+                      color: const Color(0xFF199A8E).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -479,7 +680,6 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                     ),
                   ),
                 ),
-                // Center illustration
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -488,10 +688,14 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF199A8E).withOpacity(0.05),
+                          color: const Color(
+                            0xFF199A8E,
+                          ).withValues(alpha: 0.05),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF199A8E).withOpacity(0.2),
+                            color: const Color(
+                              0xFF199A8E,
+                            ).withValues(alpha: 0.2),
                             width: 2,
                           ),
                         ),
@@ -512,7 +716,6 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                     ],
                   ),
                 ),
-                // Camera button
                 Positioned(
                   bottom: 16,
                   right: 16,
@@ -523,7 +726,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF199A8E).withOpacity(0.3),
+                          color: const Color(0xFF199A8E).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -552,7 +755,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
+            color: Colors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -594,7 +797,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
               borderRadius: BorderRadius.circular(20.0),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
-                child: Container(color: Colors.black.withOpacity(0.2)),
+                child: Container(color: Colors.black.withValues(alpha: 0.2)),
               ),
             ),
           ),
@@ -636,7 +839,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                 Text(
                   'Vui lòng đợi trong giây lát.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 16,
                     shadows: const [
                       Shadow(
@@ -660,7 +863,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -680,7 +883,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
   Widget _buildGuidelinesCard(ThemeData theme) {
     return Card(
       elevation: 4,
-      shadowColor: Colors.orange.withOpacity(0.2),
+      shadowColor: Colors.orange.withValues(alpha: 0.2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         decoration: BoxDecoration(
@@ -689,8 +892,8 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.orange.withOpacity(0.1),
-              Colors.orange.withOpacity(0.05),
+              Colors.orange.withValues(alpha: 0.1),
+              Colors.orange.withValues(alpha: 0.05),
             ],
           ),
         ),
@@ -704,7 +907,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -735,7 +938,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
+                          color: Colors.orange.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -784,7 +987,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF199A8E).withOpacity(0.3),
+            color: const Color(0xFF199A8E).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -830,10 +1033,9 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
 
   Widget _buildTutorialOverlay() {
     return Container(
-      color: Colors.black.withOpacity(0.7),
+      color: Colors.black.withValues(alpha: 0.7),
       child: Stack(
         children: [
-          // Tutorial content
           Center(
             child: FadeTransition(
               opacity: _tutorialFadeAnimation,
@@ -847,7 +1049,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -859,7 +1061,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF199A8E).withOpacity(0.1),
+                          color: const Color(0xFF199A8E).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -914,7 +1116,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                               _currentTutorialStep < _tutorialSteps.length - 1
                                   ? "Tiếp tục"
                                   : "Bắt đầu",
-                                  style: TextStyle(fontSize: 12),
+                              style: const TextStyle(fontSize: 12),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF199A8E),
@@ -936,7 +1138,6 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
               ),
             ),
           ),
-          // Progress indicator
           Positioned(
             top: 48,
             left: 0,
@@ -954,29 +1155,13 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
                     color:
                         index == _currentTutorialStep
                             ? const Color(0xFF199A8E)
-                            : Colors.white.withOpacity(0.5),
+                            : Colors.white.withValues(alpha: 0.5),
                   ),
                 ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _BulletText extends StatelessWidget {
-  final String text;
-  const _BulletText(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 14, color: Colors.black87),
       ),
     );
   }
@@ -1005,24 +1190,24 @@ class ScanEffectPainter extends CustomPainter {
 
     final paint =
         Paint()
-          ..color = Colors.white.withOpacity(0.7)
+          ..color = Colors.white.withValues(alpha: 0.7)
           ..strokeWidth = 2.5
           ..shader = LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF199A8E).withOpacity(0),
-              const Color(0xFF199A8E).withOpacity(0.8),
+              const Color(0xFF199A8E).withValues(alpha: 0),
+              const Color(0xFF199A8E).withValues(alpha: 0.8),
               const Color(0xFF199A8E),
-              const Color(0xFF199A8E).withOpacity(0.8),
-              const Color(0xFF199A8E).withOpacity(0),
+              const Color(0xFF199A8E).withValues(alpha: 0.8),
+              const Color(0xFF199A8E).withValues(alpha: 0),
             ],
             stops: const [0.0, 0.4, 0.5, 0.6, 1.0],
           ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final glowPaint =
         Paint()
-          ..color = const Color(0xFF199A8E).withOpacity(0.5)
+          ..color = const Color(0xFF199A8E).withValues(alpha: 0.5)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
 
     canvas.drawLine(

@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'services/profile_service.dart';
 import 'models/profile_model.dart';
 import '../../core/utils/text_utils.dart';
+import '../../core/utils/exceptions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_latn/features/auth/presentation/screens/login_screen.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -25,6 +29,41 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadAvatarUrl();
   }
 
+  Future<bool> _checkNetworkConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  void _showSuccessMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   Future<void> _loadProfile() async {
     try {
       setState(() {
@@ -32,91 +71,130 @@ class _ProfilePageState extends State<ProfilePage> {
         _error = null;
       });
 
+      final hasConnection = await _checkNetworkConnectivity();
+      if (!hasConnection) {
+        if (mounted) {
+          _showErrorMessage(
+            'Không có kết nối internet. Vui lòng kiểm tra lại.',
+          );
+        }
+        setState(() {
+          _error = 'Không có kết nối internet';
+          _isLoading = false;
+        });
+        return;
+      }
+
       final profileData = await ProfileService.getUserProfile();
       final profile = ProfileModel.fromJson(profileData);
 
-      setState(() {
-        _profile = profile;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _profile = profile;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+        _showErrorMessage('Lỗi tải thông tin hồ sơ: $e');
+      }
     }
   }
 
   Future<void> _loadAvatarUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _avatarUrl = prefs.getString('avatarUrl');
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _avatarUrl = prefs.getString('avatarUrl');
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorMessage('Lỗi tải ảnh đại diện: $e');
+      }
+    }
   }
 
   Future<void> _updateProfile(ProfileModel updatedProfile) async {
     // Validate fields
     final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+');
     if (updatedProfile.name.trim().isEmpty) {
-      _showError('Tên không được để trống');
+      _showErrorMessage('Tên không được để trống');
       return;
     }
     if (!emailRegex.hasMatch(updatedProfile.email)) {
-      _showError('Email không hợp lệ');
+      _showErrorMessage('Email không hợp lệ');
       return;
     }
     if (updatedProfile.phone != null &&
         updatedProfile.phone!.isNotEmpty &&
         updatedProfile.phone!.length < 8) {
-      _showError('Số điện thoại không hợp lệ');
+      _showErrorMessage('Số điện thoại không hợp lệ');
       return;
     }
     if (updatedProfile.dateOfBirth == null) {
-      _showError('Ngày sinh không hợp lệ');
+      _showErrorMessage('Ngày sinh không hợp lệ');
       return;
     }
     if (updatedProfile.avatarUrl == null || updatedProfile.avatarUrl!.isEmpty) {
-      _showError('Ảnh đại diện không hợp lệ');
+      _showErrorMessage('Ảnh đại diện không hợp lệ');
       return;
     }
+
     try {
       setState(() {
         _isLoading = true;
       });
+
+      final hasConnection = await _checkNetworkConnectivity();
+      if (!hasConnection) {
+        if (mounted) {
+          _showErrorMessage(
+            'Không có kết nối internet. Vui lòng kiểm tra lại.',
+          );
+        }
+        return;
+      }
+
       await ProfileService.updateUserProfile(updatedProfile.toJson());
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('avatarUrl', updatedProfile.avatarUrl!);
       await prefs.setString('userId', updatedProfile.id);
       await prefs.setString('userName', updatedProfile.name);
       await prefs.setString('userEmail', updatedProfile.email);
-      if (updatedProfile.phone != null)
+      if (updatedProfile.phone != null) {
         await prefs.setString('userPhone', updatedProfile.phone!);
-      if (updatedProfile.dateOfBirth != null)
+      }
+      if (updatedProfile.dateOfBirth != null) {
         await prefs.setString(
           'userDob',
           updatedProfile.dateOfBirth!.toIso8601String(),
         );
-      setState(() {
-        _profile = updatedProfile;
-        _avatarUrl = updatedProfile.avatarUrl;
-        _isLoading = false;
-      });
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Cập nhật thành công!')));
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showError('Cập nhật thất bại: $e');
-    }
-  }
+      }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+      if (mounted) {
+        setState(() {
+          _profile = updatedProfile;
+          _avatarUrl = updatedProfile.avatarUrl;
+          _isLoading = false;
+        });
+        Navigator.of(context).pop();
+        _showSuccessMessage('Cập nhật thành công!');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showErrorMessage('Cập nhật thất bại: $e');
+      }
+    }
   }
 
   // Replace the old dialog with a beautiful modal bottom sheet
@@ -332,8 +410,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                       avatarUrl: avatarController.text,
                                     ),
                                   );
-                                  if (context.mounted)
+                                  if (context.mounted) {
                                     Navigator.of(context).pop();
+                                  }
                                 },
                       ),
                     ),
@@ -358,20 +437,26 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _logout(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (mounted) {
+        _showErrorMessage('Lỗi đăng xuất: $e');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color accent = const Color(0xFF19C3AE);
-    final Color bgColor = const Color(0xFFF6F8FA);
+    const Color accent = Color(0xFF19C3AE);
+    const Color bgColor = Color(0xFFF6F8FA);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -491,9 +576,9 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Lỗi tải dữ liệu',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.red,
