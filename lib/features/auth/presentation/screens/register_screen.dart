@@ -24,63 +24,60 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? errorMessage;
 
   Future<void> register() async {
-    final password = passwordController.text.trim();
-    final phone = phoneController.text.trim();
-    final email = emailController.text.trim();
+  final name = nameController.text.trim();
+  final email = emailController.text.trim();
+  final phone = phoneController.text.trim();
+  final password = passwordController.text.trim();
 
-    try {
-      if (password.isEmpty) throw "Mật khẩu không được để trống";
-      if (password.length < 6) throw "Mật khẩu phải có ít nhất 6 ký tự";
-      if (!RegExp(r'[A-Z]').hasMatch(password))
-        throw "Mật khẩu phải chứa ít nhất một chữ hoa";
-      if (!RegExp(r'\d').hasMatch(password))
-        throw "Mật khẩu phải chứa ít nhất một chữ số";
-      if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password))
-        throw "Mật khẩu phải chứa ít nhất một ký tự đặc biệt";
-      if (!RegExp(r"^\d{10,11}$").hasMatch(phone))
-        throw "Số điện thoại phải có 10 hoặc 11 chữ số";
-      if (!RegExp(r"^[^@]+@[^@]+\.[^@]+").hasMatch(email))
-        throw "Email không hợp lệ";
+  try {
+    if (password.isEmpty) throw "Mật khẩu không được để trống";
+    if (password.length < 6) throw "Mật khẩu phải có ít nhất 6 ký tự";
+    if (!RegExp(r'[A-Z]').hasMatch(password)) throw "Mật khẩu phải có chữ in hoa";
+    if (!RegExp(r'\d').hasMatch(password)) throw "Mật khẩu phải có số";
+    if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password)) throw "Mật khẩu phải có ký tự đặc biệt";
+    if (!RegExp(r"^\d{10,11}$").hasMatch(phone)) throw "SĐT phải có 10-11 chữ số";
+    if (!RegExp(r"^[^@]+@[^@]+\.[^@]+").hasMatch(email)) throw "Email không hợp lệ";
 
-      setState(() {
-        errorMessage = null;
-      });
+    setState(() => errorMessage = null);
 
-      final url = Uri.parse(
-        "https://fastapi-service-748034725478.europe-west4.run.app//api/register",
+    final url = Uri.parse("https://fastapi-service-748034725478.europe-west4.run.app/api/register");
+
+    final request = http.MultipartRequest("POST", url);
+    request.fields['name'] = name;
+    request.fields['email'] = email;
+    request.fields['phone'] = phone;
+    request.fields['password'] = password;
+    request.fields['dateOfBirth'] = dateOfBirth;
+
+    // Nếu bạn muốn gửi ảnh mặc định (test), bạn có thể bỏ qua phần này hoặc dùng ảnh từ Asset
+    // request.files.add(await http.MultipartFile.fromPath(
+    //   'image',
+    //   yourImageFilePath,
+    //   contentType: MediaType('image', 'jpeg'),
+    // ));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => const SuccessDialog(),
       );
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "name": nameController.text.trim(),
-          "email": email,
-          "phone": phone,
-          "password": password,
-          "dateOfBirth": dateOfBirth,
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return const SuccessDialog();
-          },
-        );
-      } else {
-        final responseBody = jsonDecode(response.body);
-        setState(() {
-          errorMessage = responseBody['message'] ?? 'Đăng ký thất bại';
-        });
-      }
-    } catch (e) {
+    } else {
+      final responseBody = jsonDecode(response.body);
       setState(() {
-        errorMessage = e.toString();
+        errorMessage = responseBody['detail']?.toString() ?? 'Đăng ký thất bại';
       });
     }
+  } catch (e) {
+    setState(() {
+      errorMessage = e.toString();
+    });
   }
+}
+
 
   InputDecoration inputStyle(
     IconData icon,

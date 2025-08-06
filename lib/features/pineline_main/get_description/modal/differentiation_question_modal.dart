@@ -62,31 +62,44 @@ class _Differentiation_Question_ModalState
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print("API Response: $data"); // Debug log
 
+        // Handle different response formats
+        List<String> questionList = [];
+        
         if (data is List && data.isNotEmpty) {
+          // Format: [{"questions": [...]}]
           final item = data[0];
           final qList = item['questions'] ?? item['question'];
           if (qList is List) {
-            setState(() {
-              questions =
-                  List<String>.from(
-                    qList,
-                  ).where((q) => q.trim() != ".").toList();
-              for (int i = 0; i < questions.length; i++) {
-                controllers[i] = TextEditingController();
-              }
-              _fieldVisible = List.generate(questions.length, (_) => false);
-              _staggerFields();
-              isLoading = false;
-            });
-          } else {
-            throw Exception("Dữ liệu không đúng định dạng.");
+            questionList = List<String>.from(qList).where((q) => q.trim() != ".").toList();
           }
+        } else if (data is Map) {
+          // Format: {"questions": [...]} or {"question": [...]}
+          final qList = data['questions'] ?? data['question'];
+          if (qList is List) {
+            questionList = List<String>.from(qList).where((q) => q.trim() != ".").toList();
+          }
+        } else if (data is List) {
+          // Format: ["question1", "question2", ...]
+          questionList = List<String>.from(data).where((q) => q.trim() != ".").toList();
+        }
+
+        if (questionList.isNotEmpty) {
+          setState(() {
+            questions = questionList;
+            for (int i = 0; i < questions.length; i++) {
+              controllers[i] = TextEditingController();
+            }
+            _fieldVisible = List.generate(questions.length, (_) => false);
+            _staggerFields();
+            isLoading = false;
+          });
         } else {
-          throw Exception("Dữ liệu không đúng định dạng.");
+          throw Exception("Không tìm thấy câu hỏi trong dữ liệu API.");
         }
       } else {
-        throw Exception("Lỗi kết nối API: \\${response.statusCode}");
+        throw Exception("Lỗi kết nối API: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       print("Lỗi: $e");
@@ -94,6 +107,10 @@ class _Differentiation_Question_ModalState
         isLoading = false;
         questions = [];
       });
+      // Show error dialog to user
+      if (mounted) {
+        _showErrorDialog('Không thể tải câu hỏi: $e');
+      }
     }
   }
 
@@ -288,75 +305,125 @@ class _Differentiation_Question_ModalState
                           top: 12,
                         ),
                         children: [
-                          ...List.generate(
-                            questions.length,
-                            (i) => _buildAnimatedInputSection(
-                              index: i,
-                              child: buildQuestionWidget(questions[i], i),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          MouseRegion(
-                            cursor:
-                                _isSubmitting
-                                    ? SystemMouseCursors.forbidden
-                                    : SystemMouseCursors.click,
-                            child: AnimatedContainer(
-                              duration: Duration(milliseconds: 150),
-                              curve: Curves.easeInOut,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        _isSubmitting
-                                            ? Colors.grey.withOpacity(0.1)
-                                            : Colors.teal.withOpacity(0.18),
-                                    blurRadius: 12,
-                                    offset: Offset(0, 4),
+                          if (questions.isEmpty && !isLoading)
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Không thể tải câu hỏi',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Vui lòng thử lại sau hoặc liên hệ hỗ trợ',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        isLoading = true;
+                                        questions = [];
+                                      });
+                                      fetchQuestions();
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Thử lại'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF199A8E),
+                                      foregroundColor: Colors.white,
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      _isSubmitting
-                                          ? Colors.grey[400]
-                                          : const Color(0xFF199A8E),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 18,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  elevation: 6,
-                                  shadowColor: const Color(
-                                    0xFF199A8E,
-                                  ).withOpacity(0.25),
-                                  textStyle: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                icon:
-                                    _isSubmitting
-                                        ? SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        )
-                                        : const Icon(Icons.send_rounded),
-                                label: Text(
-                                  _isSubmitting ? "Đang gửi..." : "Tiếp theo",
-                                ),
-                                onPressed: _isSubmitting ? null : submitAnswers,
+                            )
+                          else
+                            ...List.generate(
+                              questions.length,
+                              (i) => _buildAnimatedInputSection(
+                                index: i,
+                                child: buildQuestionWidget(questions[i], i),
                               ),
                             ),
-                          ),
+                          if (questions.isNotEmpty) ...[
+                            const SizedBox(height: 24),
+                            MouseRegion(
+                              cursor:
+                                  _isSubmitting
+                                      ? SystemMouseCursors.forbidden
+                                      : SystemMouseCursors.click,
+                              child: AnimatedContainer(
+                                duration: Duration(milliseconds: 150),
+                                curve: Curves.easeInOut,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          _isSubmitting
+                                              ? Colors.grey.withOpacity(0.1)
+                                              : Colors.teal.withOpacity(0.18),
+                                      blurRadius: 12,
+                                      offset: Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        _isSubmitting
+                                            ? Colors.grey[400]
+                                            : const Color(0xFF199A8E),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 18,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    elevation: 6,
+                                    shadowColor: const Color(
+                                      0xFF199A8E,
+                                    ).withOpacity(0.25),
+                                    textStyle: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  icon:
+                                      _isSubmitting
+                                          ? SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2.5,
+                                            ),
+                                          )
+                                          : const Icon(Icons.send_rounded),
+                                  label: Text(
+                                    _isSubmitting ? "Đang gửi..." : "Tiếp theo",
+                                  ),
+                                  onPressed: _isSubmitting ? null : submitAnswers,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
