@@ -159,7 +159,7 @@ class _ResetPromptScreenState extends State<ResetPromptScreen> {
       final response = await http
           .post(
             Uri.parse(
-              'https://fastapi-service-748034725478.europe-west4.run.app/api/reset-password?email=${Uri.encodeComponent(widget.email)}&verification_code=${Uri.encodeComponent(code)}&new_password=${Uri.encodeComponent(password)}',
+              'https://old-med-api-18037738556.asia-southeast1.run.app/api/reset-password?email=${Uri.encodeComponent(widget.email)}&verification_code=${Uri.encodeComponent(code)}&new_password=${Uri.encodeComponent(password)}',
             ),
           )
           .timeout(

@@ -6,7 +6,7 @@ import 'package:geocoding/geocoding.dart';
 
 class UVService {
   static const String baseUrl =
-      'https://fastapi-service-748034725478.europe-west4.run.app/api';
+      'https://old-med-api-18037738556.asia-southeast1.run.app/api';
 
   // Request location permission
   static Future<bool> requestLocationPermission() async {

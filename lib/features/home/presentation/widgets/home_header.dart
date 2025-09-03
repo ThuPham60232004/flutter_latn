@@ -95,7 +95,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 2),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -107,7 +107,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                       backgroundImage: NetworkImage(avatarUrl),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 2),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +117,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                             Text(
                               'Xin chào',
                               style: GoogleFonts.lato(
-                                fontSize: screenWidth * 0.038,
+                                fontSize: screenWidth * 0.030,
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -132,19 +132,19 @@ class _HomeHeaderState extends State<HomeHeader> {
                         Text(
                           userName,
                           style: GoogleFonts.lato(
-                            fontSize: screenWidth * 0.052,
+                            fontSize: screenWidth * 0.040,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 1),
                         Text(
                           'Chúc bạn một ngày tuyệt vời và nhiều sức khỏe!',
                           style: GoogleFonts.lato(
                             color: Colors.white.withOpacity(0.92),
-                            fontSize: screenWidth * 0.032,
+                            fontSize: screenWidth * 0.030,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -153,7 +153,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
             ],
           ),
         ),

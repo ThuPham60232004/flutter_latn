@@ -425,8 +425,8 @@ class _HospitalScreenState extends State<HospitalScreen>
                       ],
                     ),
                     const SizedBox(height: 22),
-                  ],               
                   ],
+                ],
               ),
             ),
           ),
@@ -499,17 +499,15 @@ class _HospitalScreenState extends State<HospitalScreen>
             border: Border.all(color: Colors.teal.withOpacity(0.2)),
           ),
           child: Center(
-            child: Flexible(
-              child: Text(
-                specialtyList[index],
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.teal,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            child: Text(
+              specialtyList[index],
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.teal,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         );

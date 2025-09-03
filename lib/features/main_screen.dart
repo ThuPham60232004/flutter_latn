@@ -3,6 +3,7 @@ import 'package:flutter_application_latn/features/home/presentation/screens/home
 import 'package:flutter_application_latn/features/compare/compare_screen.dart';
 import 'package:flutter_application_latn/features/uv/uv_screen.dart';
 import 'package:flutter_application_latn/features/profile/profile.dart';
+import 'package:flutter_application_latn/features/compare/test_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -16,7 +17,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     HomeScreen(),
-    const CompareScreen(),
+    const ProcessListScreen(),
     const UVScreen(),
     const ProfilePage(),
   ];
