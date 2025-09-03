@@ -295,7 +295,7 @@ class _ChooseImageScreenState extends State<ChooseImageScreen>
       }
 
       final uri = Uri.parse(
-        'https://fastapi-service-748034725478.europe-west4.run.app/api/diagnosis/start?user_id=$userId',
+        'https://old-med-api-18037738556.asia-southeast1.run.app/api/diagnosis/start?user_id=$userId',
       );
 
       final request = http.MultipartRequest('POST', uri);

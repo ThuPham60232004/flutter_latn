@@ -392,7 +392,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       final url = Uri.parse(
-        "https://fastapi-service-748034725478.europe-west4.run.app/api/register",
+        "https://old-med-api-18037738556.asia-southeast1.run.app/api/register",
       );
 
       final request = http.MultipartRequest("POST", url);

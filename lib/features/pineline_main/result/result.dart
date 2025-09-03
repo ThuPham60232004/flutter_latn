@@ -32,7 +32,7 @@ class _ResultState extends State<Result> {
     if (userId == null) return [];
 
     final url =
-        'https://fastapi-service-748034725478.europe-west4.run.app/api/final-diagnose?key=$userId';
+        'https://old-med-api-18037738556.asia-southeast1.run.app/api/final-diagnose?key=$userId';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -64,7 +64,7 @@ class _ResultState extends State<Result> {
 
   Future<String> fetchDiseaseDescription(String diseaseName) async {
     final url =
-        'https://fastapi-service-748034725478.europe-west4.run.app/api/knowledge?disease_name=${Uri.encodeComponent(diseaseName)}';
+        'https://old-med-api-18037738556.asia-southeast1.run.app/api/knowledge?disease_name=${Uri.encodeComponent(diseaseName)}';
 
     try {
       final response = await http.get(Uri.parse(url));
