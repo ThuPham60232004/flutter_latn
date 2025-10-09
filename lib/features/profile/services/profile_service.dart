@@ -6,7 +6,7 @@ import '../../../core/utils/exceptions.dart';
 
 class ProfileService {
   static const String baseUrl =
-      'https://old-med-api-18037738556.asia-southeast1.run.app/api';
+      'https://api.demart.htilssu.id.vn/api';
 
   static Future<bool> _checkNetworkConnectivity() async {
     try {

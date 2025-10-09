@@ -211,7 +211,7 @@ class _ResetScreenState extends State<ResetScreen> {
       final response = await http
           .post(
             Uri.parse(
-              'https://old-med-api-18037738556.asia-southeast1.run.app/api/forgot-password?email=${Uri.encodeComponent(email)}',
+              'https://api.demart.htilssu.id.vn/api/forgot-password?email=${Uri.encodeComponent(email)}',
             ),
           )
           .timeout(

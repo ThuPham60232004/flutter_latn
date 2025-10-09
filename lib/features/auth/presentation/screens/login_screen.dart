@@ -243,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final response = await http
           .post(
             Uri.parse(
-              "https://old-med-api-18037738556.asia-southeast1.run.app/api/login",
+              "https://api.demart.htilssu.id.vn/api/login",
             ),
             headers: {"Content-Type": "application/json"},
             body: jsonEncode({"email": email, "password": password}),

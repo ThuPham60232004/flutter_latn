@@ -38,9 +38,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
-  // Phone validation regex
-  static final RegExp _phoneRegex = RegExp(r'^[0-9]{10,11}$');
-
   // Validate name
   String? _validateName(String? name) {
     if (name == null || name.trim().isEmpty) {
@@ -53,22 +50,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return 'Tên phải có ít nhất 2 ký tự';
     }
 
-    if (trimmedName.length > 50) {
-      return 'Tên quá dài (tối đa 50 ký tự)';
-    }
-
-    if (!RegExp(r'^[a-zA-ZÀ-ỹ\s]+$').hasMatch(trimmedName)) {
-      return 'Tên chỉ được chứa chữ cái và khoảng trắng';
-    }
-
-    if (trimmedName.contains('  ')) {
-      return 'Tên không được chứa khoảng trắng liên tiếp';
-    }
-
-    if (trimmedName.startsWith(' ') || trimmedName.endsWith(' ')) {
-      return 'Tên không được bắt đầu hoặc kết thúc bằng khoảng trắng';
-    }
-
     return null;
   }
 
@@ -79,108 +60,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final trimmedEmail = email.trim();
 
-    if (trimmedEmail.contains(' ')) {
-      return 'Email không được chứa khoảng trắng';
-    }
-
-    final vietnameseChars =
-        'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ';
-    for (int i = 0; i < trimmedEmail.length; i++) {
-      if (vietnameseChars.contains(trimmedEmail[i])) {
-        return 'Email không được chứa ký tự tiếng Việt có dấu';
-      }
-    }
-
-    final invalidChars = [
-      '<',
-      '>',
-      '(',
-      ')',
-      '[',
-      ']',
-      '\\',
-      ',',
-      ';',
-      ':',
-      '"',
-      "'",
-      '`',
-      '~',
-      '!',
-      '@',
-      '#',
-      '\$',
-      '%',
-      '^',
-      '&',
-      '*',
-      '+',
-      '=',
-      '|',
-      '{',
-      '}',
-      '?',
-    ];
-    for (int i = 0; i < trimmedEmail.length; i++) {
-      if (invalidChars.contains(trimmedEmail[i])) {
-        return 'Email chứa ký tự không hợp lệ';
-      }
-    }
-
-    if (trimmedEmail.contains('..')) {
-      return 'Email không được chứa dấu chấm liên tiếp';
-    }
-
-    final parts = trimmedEmail.split('@');
-    if (parts.length != 2) {
-      return 'Email phải chứa đúng một ký tự @';
-    }
-
-    final localPart = parts[0];
-    final domain = parts[1];
-
-    if (localPart.isEmpty) {
-      return 'Phần trước @ không được để trống';
-    }
-
-    if (localPart.length > 64) {
-      return 'Phần trước @ quá dài (tối đa 64 ký tự)';
-    }
-
-    if (localPart.startsWith('.') || localPart.endsWith('.')) {
-      return 'Phần trước @ không được bắt đầu hoặc kết thúc bằng dấu chấm';
-    }
-
-    if (domain.isEmpty) {
-      return 'Tên miền không được để trống';
-    }
-
-    if (domain.length < 3) {
-      return 'Tên miền email không hợp lệ (quá ngắn)';
-    }
-
-    if (domain.length > 253) {
-      return 'Tên miền email quá dài (tối đa 253 ký tự)';
-    }
-
-    if (domain.startsWith('.') || domain.endsWith('.')) {
-      return 'Tên miền không được bắt đầu hoặc kết thúc bằng dấu chấm';
-    }
-
-    if (!RegExp(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(domain)) {
-      return 'Tên miền email không đúng định dạng';
-    }
-
-    if (domain.contains('..')) {
-      return 'Tên miền không được chứa dấu chấm liên tiếp';
-    }
-
     if (!_emailRegex.hasMatch(trimmedEmail)) {
       return 'Email không đúng định dạng';
-    }
-
-    if (trimmedEmail.length > 254) {
-      return 'Email quá dài (tối đa 254 ký tự)';
     }
 
     return null;
@@ -192,23 +73,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final trimmedPhone = phone.trim();
-
     final digitsOnly = trimmedPhone.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (digitsOnly.length < 10) {
       return 'Số điện thoại phải có ít nhất 10 chữ số';
-    }
-
-    if (digitsOnly.length > 11) {
-      return 'Số điện thoại không được quá 11 chữ số';
-    }
-
-    if (!_phoneRegex.hasMatch(digitsOnly)) {
-      return 'Số điện thoại không đúng định dạng';
-    }
-
-    if (!digitsOnly.startsWith('0')) {
-      return 'Số điện thoại phải bắt đầu bằng số 0';
     }
 
     return null;
@@ -219,32 +87,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return 'Vui lòng nhập mật khẩu';
     }
 
-    if (password.length < 8) {
-      return 'Mật khẩu phải có ít nhất 8 ký tự';
-    }
-
-    if (password.length > 128) {
-      return 'Mật khẩu quá dài (tối đa 128 ký tự)';
-    }
-
-    if (password.contains(' ')) {
-      return 'Mật khẩu không được chứa khoảng trắng';
-    }
-
-    if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Mật khẩu phải có ít nhất 1 chữ in hoa';
-    }
-
-    if (!RegExp(r'[a-z]').hasMatch(password)) {
-      return 'Mật khẩu phải có ít nhất 1 chữ thường';
-    }
-
-    if (!RegExp(r'\d').hasMatch(password)) {
-      return 'Mật khẩu phải có ít nhất 1 chữ số';
-    }
-
-    if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password)) {
-      return 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt';
+    if (password.length < 6) {
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
     }
 
     return null;
@@ -258,21 +102,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final date = DateTime.parse(dateOfBirth);
       final now = DateTime.now();
-      final age =
-          now.year -
-          date.year -
-          (now.month < date.month ||
-                  (now.month == date.month && now.day < date.day)
-              ? 1
-              : 0);
-
-      if (age < 1) {
-        return 'Tuổi phải lớn hơn 1';
-      }
-
-      if (age > 120) {
-        return 'Tuổi không hợp lệ';
-      }
 
       if (date.isAfter(now)) {
         return 'Ngày sinh không thể là ngày trong tương lai';
@@ -391,9 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      final url = Uri.parse(
-        "https://old-med-api-18037738556.asia-southeast1.run.app/api/register",
-      );
+      final url = Uri.parse("https://api.demart.htilssu.id.vn/api/register");
 
       final request = http.MultipartRequest("POST", url);
       request.fields['name'] = name;

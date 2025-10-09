@@ -1,6 +1,6 @@
 class ApiConfig {
   static const String baseUrl =
-      'https://old-med-api-18037738556.asia-southeast1.run.app/api';
+      'https://api.demart.htilssu.id.vn/api';
 
   static const String createCheckProcess = '/create-check-process';
   static const String trackCheckProcess = '/track-check-process';

@@ -4,7 +4,7 @@ import '../models/hospital_model.dart';
 
 class HospitalService {
   static const String baseUrl =
-      'https://old-med-api-18037738556.asia-southeast1.run.app/api';
+      'https://api.demart.htilssu.id.vn/api';
 
   static Future<List<Hospital>> getHospitals() async {
     try {

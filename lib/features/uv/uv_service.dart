@@ -6,7 +6,7 @@ import 'package:geocoding/geocoding.dart';
 
 class UVService {
   static const String baseUrl =
-      'https://old-med-api-18037738556.asia-southeast1.run.app/api';
+      'https://api.demart.htilssu.id.vn/api';
 
   // Request location permission
   static Future<bool> requestLocationPermission() async {

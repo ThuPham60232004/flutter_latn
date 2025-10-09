@@ -55,7 +55,7 @@ class _Differentiation_Question_ModalState
       final userId = prefs.getString('userId') ?? '';
 
       final url = Uri.parse(
-        'https://old-med-api-18037738556.asia-southeast1.run.app/api/diagnosis/$userId/questions',
+        'https://api.demart.htilssu.id.vn/api/diagnosis/$userId/questions',
       );
 
       final response = await http.get(url);
@@ -158,7 +158,7 @@ class _Differentiation_Question_ModalState
 
     final encodedAnswer = Uri.encodeComponent(qaString);
     final url = Uri.parse(
-      'https://old-med-api-18037738556.asia-southeast1.run.app/api/diagnosis/$userId/submit?user_answers=$encodedAnswer',
+      'https://api.demart.htilssu.id.vn/api/diagnosis/$userId/submit?user_answers=$encodedAnswer',
     );
 
     try {

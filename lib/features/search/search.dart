@@ -35,7 +35,7 @@ class _DiseaseSearchScreenState extends State<DiseaseSearchScreen> {
     try {
       // Call single API that handles both standardization and knowledge retrieval
       final url =
-          'https://old-med-api-18037738556.asia-southeast1.run.app/api/knowledge/translate?disease_name=${Uri.encodeComponent(diseaseName)}';
+          'https://api.demart.htilssu.id.vn/api/knowledge/translate?disease_name=${Uri.encodeComponent(diseaseName)}';
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

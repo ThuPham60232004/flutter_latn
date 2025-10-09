@@ -50,7 +50,7 @@ class _ForgotScreenState extends State<ForgotScreen>
     try {
       final response = await http.post(
         Uri.parse(
-          'https://old-med-api-18037738556.asia-southeast1.run.app/api/forgot-password?email=${_emailController.text.trim()}',
+          'https://api.demart.htilssu.id.vn/api/forgot-password?email=${_emailController.text.trim()}',
         ),
       );
       if (response.statusCode == 200) {
